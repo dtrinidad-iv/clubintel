@@ -1,6 +1,7 @@
 # 02 — Claude Code tooling
 
-**Status:** WIP
+**Status:** Done
+**Commits:** `bee1bda` (claude), `9d5d4db` (tests)
 
 ## Goal
 Make the repo's working rules executable. `CLAUDE.md` records the conventions. Skills turn the routines (planning, verifying, shipping, adding a tenant feature, writing a migration) into one command each. Read-only subagents review every change, and hooks block the mistakes that hurt most in a Supabase app.
@@ -39,3 +40,17 @@ Make the repo's working rules executable. `CLAUDE.md` records the conventions. S
 
 ## Commits after approval
 `chore(claude): CLAUDE.md, skills, subagents, hooks and MCP`, `test: hook guards`, then this plan → Done.
+
+## Notes from the build
+- Hook tests: 9 pass (`npm run test:hooks`). Each hook was also run through the exact command line in `.claude/settings.json` with a real event:
+  - remote DB reset → deny;
+  - `git push` → ask;
+  - edit to a committed migration → deny;
+  - write to `.env.local` → deny;
+  - a TypeScript error after an edit → exit 2 with the compiler output;
+  - session start → open plans and Supabase status.
+- Hooks, skills and agents load when a Claude Code session is opened **in this repo**. A session started in a parent folder doesn't pick them up.
+- `/verify` prints the test counts per step and ends with `ALL PASSED` or `FAILED: …`.
+
+## Follow-ups
+- A `post-edit` hook test that feeds a deliberate type error. It's covered manually for now, because tsc makes the test slow.
