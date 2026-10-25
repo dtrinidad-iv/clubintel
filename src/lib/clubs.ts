@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { likePattern } from "@/lib/search";
 import { createClient } from "@/lib/supabase/server";
 import { CLUB_PAGE_SIZE, type ClubSearch } from "@/lib/validation";
 
@@ -9,11 +10,6 @@ import { CLUB_PAGE_SIZE, type ClubSearch } from "@/lib/validation";
 const DIRECTORY_COLUMNS =
   "id, name, short_name, region, city, stadium, capacity, founded, league_id, league_name, tier, latest_season, league_position, avg_attendance";
 
-// Escape LIKE wildcards so a search for "100%" means the text, not a pattern. PostgREST also
-// reads `*` as a wildcard and has no escape for it; club names never contain one, so drop it.
-function likePattern(q: string) {
-  return `%${q.replaceAll("*", "").replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-}
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 
@@ -94,3 +90,11 @@ export async function leagueSize(leagueId: string, season: number) {
   if (error) throw error;
   return count ?? 0;
 }
+
+// Every club as a choice for a form's club picker.
+export const clubOptions = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("clubs").select("id, name").order("name");
+  if (error) throw error;
+  return data;
+});

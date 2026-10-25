@@ -63,6 +63,15 @@ export async function requirePermission(permission: string) {
   return ctx;
 }
 
+// For Server Actions: the context, or null without the permission, so the action can return an
+// error message instead of throwing.
+export async function checkPermission(permission: string) {
+  const ctx = await requireWorkspace();
+  return ctx.workspace.permissions.includes(permission) ? ctx : null;
+}
+
+export const NO_PERMISSION = "You don't have permission to do that.";
+
 export const listMyWorkspaces = cache(async () => {
   const user = await requireUser();
   const supabase = await createClient();

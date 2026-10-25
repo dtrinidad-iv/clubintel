@@ -43,3 +43,47 @@ export function ordinal(n: number): string {
   const suffix = tens >= 11 && tens <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th";
   return `${n}${suffix}`;
 }
+
+const STAGE_LABELS = {
+  lead: "Lead",
+  qualified: "Qualified",
+  proposal: "Proposal",
+  negotiation: "Negotiation",
+  won: "Won",
+  lost: "Lost",
+} as const;
+
+export function stageLabel(stage: keyof typeof STAGE_LABELS): string {
+  return STAGE_LABELS[stage];
+}
+
+const CATEGORY_LABELS = {
+  sponsorship: "Sponsorship",
+  hospitality: "Hospitality",
+  media: "Media",
+  partnership: "Partnership",
+  other: "Other",
+} as const;
+
+export function categoryLabel(category: keyof typeof CATEGORY_LABELS): string {
+  return CATEGORY_LABELS[category];
+}
+
+const gbp = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: 0 });
+
+// Compact amounts are built by hand: Intl's compact notation differs between Node's and the
+// browser's locale data ("£786K" vs "£786k"), which breaks hydration.
+export function formatGbp(value: number, { compact = false } = {}): string {
+  if (!compact || Math.abs(value) < 1000) return gbp.format(value);
+  const thousands = Math.round(Math.abs(value) / 100) / 10;
+  // Pick the unit after rounding, so 999,950 reads £1m rather than £1000k.
+  const [scaled, unit] = thousands >= 1000 ? [Math.round(thousands / 100) / 10, "m"] : [thousands, "k"];
+  return `${value < 0 ? "-" : ""}£${scaled}${unit}`;
+}
+
+const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+// Dates arrive as YYYY-MM-DD; formatting in UTC keeps the day the same on server and client.
+export function formatDate(date: string): string {
+  return dateFormat.format(new Date(`${date}T00:00:00Z`));
+}

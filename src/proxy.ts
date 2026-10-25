@@ -1,14 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
-const APP_PATHS = ["/dashboard", "/clubs", "/settings", "/onboarding"];
+const APP_PATHS = ["/dashboard", "/opportunities", "/contacts", "/clubs", "/settings", "/onboarding"];
 const GUEST_PATHS = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {
   const { response, userId } = await updateSession(request);
   const { pathname, search } = request.nextUrl;
 
-  if (!userId && APP_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+  // Page loads only: a Server Action is a POST to the page's path, and a redirect here would
+  // reach the client as an unreadable response. Actions check the session in the DAL, whose
+  // redirect Next handles.
+  const pageLoad = request.method === "GET" || request.method === "HEAD";
+  if (!userId && pageLoad && APP_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     const url = new URL("/login", request.url);
     url.searchParams.set("next", pathname + search);
     return redirectWithCookies(url, response);

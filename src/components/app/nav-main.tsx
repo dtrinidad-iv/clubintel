@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Settings, Shield } from "lucide-react";
+import { Handshake, LayoutDashboard, Settings, Shield, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,6 +14,8 @@ import {
 
 const items = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Opportunities", href: "/opportunities", icon: Handshake },
+  { title: "Contacts", href: "/contacts", icon: Users },
   { title: "Clubs", href: "/clubs", icon: Shield },
   { title: "Settings", href: "/settings", icon: Settings },
 ];

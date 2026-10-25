@@ -1,7 +1,7 @@
 "use client";
 
 import { MoreHorizontal } from "lucide-react";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useId, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Field, FormMessage } from "@/components/auth/form-parts";
 import {
@@ -60,15 +60,16 @@ export function RenameWorkspaceForm({ name, canEdit }: { name: string; canEdit: 
 
 export function AddMemberForm({ roles }: { roles: readonly AssignableRole[] }) {
   const [state, action, pending] = useActionState(addMember, null);
+  const roleId = useId();
   return (
     <form action={action} className="grid gap-3">
       <FormMessage state={state} />
       <div className="grid gap-3 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
         <Field name="email" label="Add someone by email" type="email" placeholder="name@club.example" required state={state} />
         <div className="grid gap-2">
-          <Label htmlFor="role">Role</Label>
+          <Label htmlFor={roleId}>Role</Label>
           <Select name="role" defaultValue={roles.at(-1)}>
-            <SelectTrigger id="role" className="w-full">
+            <SelectTrigger id={roleId} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -87,6 +87,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"contacts": {
+                  Row: {
+                    "club_id": string | null,"created_at": string,"created_by": string | null,"email": string | null,"id": string,"name": string,"notes": string | null,"phone": string | null,"role_title": string | null,"updated_at": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"email"?: string | null,"id"?: string,"name": string,"notes"?: string | null,"phone"?: string | null,"role_title"?: string | null,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Update: {
+                    "club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"email"?: string | null,"id"?: string,"name"?: string,"notes"?: string | null,"phone"?: string | null,"role_title"?: string | null,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "contacts_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "club_directory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contacts_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "clubs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "contacts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"leagues": {
                   Row: {
                     "id": string,"name": string,"tier": number
@@ -119,6 +151,50 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "workspaces"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"opportunities": {
+                  Row: {
+                    "category": Database["public"]['Enums']["opportunity_category"],"club_id": string,"contact_id": string | null,"created_at": string,"created_by": string | null,"expected_close_date": string | null,"id": string,"notes": string | null,"owner_id": string | null,"partner_name": string,"search_text": string | null,"stage": Database["public"]['Enums']["opportunity_stage"],"stage_changed_at": string,"title": string,"updated_at": string,"value_gbp": number,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category": Database["public"]['Enums']["opportunity_category"],"club_id": string,"contact_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"expected_close_date"?: string | null,"id"?: string,"notes"?: string | null,"owner_id"?: string | null,"partner_name": string,"search_text"?: never,"stage"?: Database["public"]['Enums']["opportunity_stage"],"stage_changed_at"?: string,"title": string,"updated_at"?: string,"value_gbp"?: number,"workspace_id"?: string
+                  }
+                  Update: {
+                    "category"?: Database["public"]['Enums']["opportunity_category"],"club_id"?: string,"contact_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"expected_close_date"?: string | null,"id"?: string,"notes"?: string | null,"owner_id"?: string | null,"partner_name"?: string,"search_text"?: never,"stage"?: Database["public"]['Enums']["opportunity_stage"],"stage_changed_at"?: string,"title"?: string,"updated_at"?: string,"value_gbp"?: number,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "opportunities_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "club_directory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "opportunities_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "clubs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "opportunities_workspace_id_contact_id_fkey"
+      columns: ["workspace_id","contact_id"]
+isOneToOne: false
+      referencedRelation: "contacts"
+      referencedColumns: ["workspace_id","id"]
+    },{
+      foreignKeyName: "opportunities_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "opportunities_workspace_id_owner_id_fkey"
+      columns: ["workspace_id","owner_id"]
+isOneToOne: false
+      referencedRelation: "memberships"
+      referencedColumns: ["workspace_id","user_id"]
     }
                   ]
                 },"profiles": {
@@ -223,7 +299,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "club_region": "england-north"|"england-midlands"|"england-south"|"scotland"|"wales"|"northern-ireland"|"ireland","workspace_role": "owner"|"admin"|"analyst"|"viewer"
+            "club_region": "england-north"|"england-midlands"|"england-south"|"scotland"|"wales"|"northern-ireland"|"ireland","opportunity_category": "sponsorship"|"hospitality"|"media"|"partnership"|"other","opportunity_stage": "lead"|"qualified"|"proposal"|"negotiation"|"won"|"lost","workspace_role": "owner"|"admin"|"analyst"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -343,7 +419,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "club_region": ["england-north", "england-midlands", "england-south", "scotland", "wales", "northern-ireland", "ireland"],"workspace_role": ["owner", "admin", "analyst", "viewer"]
+            "club_region": ["england-north", "england-midlands", "england-south", "scotland", "wales", "northern-ireland", "ireland"],"opportunity_category": ["sponsorship", "hospitality", "media", "partnership", "other"],"opportunity_stage": ["lead", "qualified", "proposal", "negotiation", "won", "lost"],"workspace_role": ["owner", "admin", "analyst", "viewer"]
           }
         }
 } as const
