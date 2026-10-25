@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "db:start": "supabase start -x vector,logflare,edge-runtime,imgproxy,supavisor,realtime,storage-api",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
+    "test:hooks": "node --test tests/hooks.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
