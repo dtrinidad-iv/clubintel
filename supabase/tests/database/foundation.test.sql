@@ -13,6 +13,8 @@ insert into ids values
   ('owner_b', tests.create_user('owner-b@test.local')),
   ('outsider', tests.create_user('outsider@test.local'));
 create function pg_temp.id(p text) returns uuid language sql as $$ select v from ids where k = p $$;
+-- New functions aren't executable by default (deny by default, plan 09), even in pg_temp.
+grant execute on function pg_temp.id(text) to authenticated;
 
 select tests.authenticate_as(pg_temp.id('owner_a'));
 insert into ids values ('ws_a', public.create_workspace('Workspace A'));
