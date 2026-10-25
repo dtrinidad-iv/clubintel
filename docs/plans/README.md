@@ -12,7 +12,7 @@ Write one with `/plan-task <description>`, or approve a plan in plan mode (Claud
 |---|---|---|
 | 01 | [Foundation: auth, workspaces, RLS and app shell](01-foundation.md) | Done |
 | 02 | [Claude Code tooling](02-claude-code-tooling.md) | Done |
-| 03 | [National club database](03-national-club-database.md) | Proposed |
+| 03 | [National club database](03-national-club-database.md) | Done |
 | 04 | [Commercial opportunities](04-commercial-opportunities.md) | Proposed |
 | 05 | [Intelligence dashboard](05-intelligence-dashboard.md) | Proposed |
 | 06 | [AI layer and intelligence reports](06-ai-intelligence-reports.md) | Proposed |
