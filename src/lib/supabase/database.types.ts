@@ -23,7 +23,85 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "memberships": {
+            "club_seasons": {
+                  Row: {
+                    "avg_attendance": number,"capacity": number,"club_id": string,"league_id": string,"league_position": number,"season": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "avg_attendance": number,"capacity": number,"club_id": string,"league_id": string,"league_position": number,"season": number
+                  }
+                  Update: {
+                    "avg_attendance"?: number,"capacity"?: number,"club_id"?: string,"league_id"?: string,"league_position"?: number,"season"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "club_seasons_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "club_directory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "club_seasons_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "clubs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "club_seasons_league_id_fkey"
+      columns: ["league_id"]
+isOneToOne: false
+      referencedRelation: "club_directory"
+      referencedColumns: ["league_id"]
+    },{
+      foreignKeyName: "club_seasons_league_id_fkey"
+      columns: ["league_id"]
+isOneToOne: false
+      referencedRelation: "leagues"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"clubs": {
+                  Row: {
+                    "capacity": number,"city": string,"founded": number | null,"id": string,"league_id": string,"name": string,"region": Database["public"]['Enums']["club_region"],"short_name": string,"stadium": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "capacity": number,"city": string,"founded"?: number | null,"id"?: string,"league_id": string,"name": string,"region": Database["public"]['Enums']["club_region"],"short_name": string,"stadium": string
+                  }
+                  Update: {
+                    "capacity"?: number,"city"?: string,"founded"?: number | null,"id"?: string,"league_id"?: string,"name"?: string,"region"?: Database["public"]['Enums']["club_region"],"short_name"?: string,"stadium"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "clubs_league_id_fkey"
+      columns: ["league_id"]
+isOneToOne: false
+      referencedRelation: "club_directory"
+      referencedColumns: ["league_id"]
+    },{
+      foreignKeyName: "clubs_league_id_fkey"
+      columns: ["league_id"]
+isOneToOne: false
+      referencedRelation: "leagues"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"leagues": {
+                  Row: {
+                    "id": string,"name": string,"tier": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id": string,"name": string,"tier": number
+                  }
+                  Update: {
+                    "id"?: string,"name"?: string,"tier"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"memberships": {
                   Row: {
                     "created_at": string,"role": Database["public"]['Enums']["workspace_role"],"user_id": string,"workspace_id": string
                   }
@@ -80,7 +158,15 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "club_directory": {
+                  Row: {
+                    "avg_attendance": number | null,"capacity": number,"city": string,"founded": number | null,"id": string,"latest_season": number | null,"league_id": string,"league_name": string,"league_position": number | null,"name": string,"region": Database["public"]['Enums']["club_region"],"short_name": string,"stadium": string,"tier": number
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                }
           }
           Functions: {
             "add_member_by_email":
@@ -137,7 +223,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "workspace_role": "owner"|"admin"|"analyst"|"viewer"
+            "club_region": "england-north"|"england-midlands"|"england-south"|"scotland"|"wales"|"northern-ireland"|"ireland","workspace_role": "owner"|"admin"|"analyst"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -257,7 +343,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "workspace_role": ["owner", "admin", "analyst", "viewer"]
+            "club_region": ["england-north", "england-midlands", "england-south", "scotland", "wales", "northern-ireland", "ireland"],"workspace_role": ["owner", "admin", "analyst", "viewer"]
           }
         }
 } as const
