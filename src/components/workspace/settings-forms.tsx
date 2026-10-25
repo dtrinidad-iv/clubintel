@@ -30,6 +30,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { ActionState } from "@/lib/action-state";
 import type { Role } from "@/lib/dal";
 import { roleLabel } from "@/lib/format";
+import { setAiBudget } from "@/lib/report-actions";
 import { addMember, changeMemberRole, removeMember, renameWorkspace } from "@/lib/workspace-actions";
 
 type AssignableRole = Exclude<Role, "owner">;
@@ -176,5 +177,20 @@ export function MembersTable({ members, assignable }: { members: MemberRow[]; as
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+export function AiBudgetForm({ budget }: { budget: number }) {
+  const [state, action, pending] = useActionState(setAiBudget, null);
+  return (
+    <form action={action} className="grid max-w-md gap-3">
+      <FormMessage state={state} />
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+        <Field name="budget" label="Monthly budget (US$)" inputMode="decimal" defaultValue={budget.toFixed(2)} state={state} required />
+        <Button type="submit" className="w-fit" disabled={pending}>
+          {pending ? "Saving…" : "Save budget"}
+        </Button>
+      </div>
+    </form>
   );
 }

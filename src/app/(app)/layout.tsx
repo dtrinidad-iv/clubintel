@@ -18,9 +18,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           <div className="mr-2 h-4 w-px bg-border" aria-hidden />
           <span className="text-sm text-muted-foreground">ClubIntel</span>
         </header>
-        <main className="min-w-0 flex-1 p-4 md:p-6">
+        {/* SidebarInset is the page's <main>; this is just its padding. */}
+        <div className="min-w-0 flex-1 p-4 md:p-6">
           <Suspense fallback={<PageFallback />}>{children}</Suspense>
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

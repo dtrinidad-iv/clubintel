@@ -100,3 +100,37 @@ export function formatMonth(date: string): string {
 export function formatPercent(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
+
+const dateTimeFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/London",
+});
+
+// A timestamp in the clubs' time zone. Server-rendered only: Intl output differs between Node
+// and browsers.
+export function formatDateTime(iso: string): string {
+  return dateTimeFormat.format(new Date(iso));
+}
+
+// US dollars with cents, for AI spend.
+const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+export function formatUsd(value: number): string {
+  return usd.format(value);
+}
+
+const REPORT_STATUS_LABELS = {
+  generating: "Generating",
+  draft: "Draft",
+  failed: "Failed",
+  approved: "Approved",
+  discarded: "Discarded",
+} as const;
+
+export function reportStatusLabel(status: keyof typeof REPORT_STATUS_LABELS): string {
+  return REPORT_STATUS_LABELS[status];
+}

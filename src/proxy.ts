@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
-const APP_PATHS = ["/dashboard", "/opportunities", "/contacts", "/clubs", "/settings", "/onboarding"];
+const APP_PATHS = ["/dashboard", "/opportunities", "/contacts", "/clubs", "/reports", "/settings", "/onboarding"];
 const GUEST_PATHS = ["/login", "/signup"];
 
 export async function proxy(request: NextRequest) {

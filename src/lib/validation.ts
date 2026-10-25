@@ -157,3 +157,17 @@ export const opportunityFiltersSchema = z.object({
 export type OpportunityFilters = z.infer<typeof opportunityFiltersSchema>;
 
 export const contactSearchSchema = z.object({ q: optional(z.string().trim().max(SEARCH_MAX)) });
+
+// Settings → AI usage. In US dollars, as Anthropic bills.
+export const aiBudgetSchema = z.object({
+  budget: z.preprocess(
+    (v) => (typeof v === "string" ? v.replace(/[$,\s]/g, "") || undefined : v),
+    z.coerce
+      .number({ error: "Enter an amount in dollars" })
+      .min(0, { error: "Use 0 or more" })
+      .max(10_000, { error: "Use $10,000 or less" })
+      .transform((n) => Math.round(n * 100) / 100),
+  ),
+});
+
+export const reviewDecisionSchema = z.enum(["approved", "discarded"]);

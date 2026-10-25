@@ -1,6 +1,6 @@
 "use client";
 
-import { Handshake, LayoutDashboard, Settings, Shield, Users } from "lucide-react";
+import { FileText, Handshake, LayoutDashboard, Settings, Shield, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -17,6 +17,7 @@ const items = [
   { title: "Opportunities", href: "/opportunities", icon: Handshake },
   { title: "Contacts", href: "/contacts", icon: Users },
   { title: "Clubs", href: "/clubs", icon: Shield },
+  { title: "Reports", href: "/reports", icon: FileText },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
 

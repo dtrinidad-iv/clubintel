@@ -23,7 +23,47 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "club_seasons": {
+            "ai_limits": {
+                  Row: {
+                    "id": boolean,"max_report_cost_usd": number,"max_workspace_budget_usd": number,"platform_daily_usd": number,"report_reserve_usd": number,"reports_per_user_day": number,"reports_per_workspace_hour": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: boolean,"max_report_cost_usd"?: number,"max_workspace_budget_usd"?: number,"platform_daily_usd"?: number,"report_reserve_usd"?: number,"reports_per_user_day"?: number,"reports_per_workspace_hour"?: number
+                  }
+                  Update: {
+                    "id"?: boolean,"max_report_cost_usd"?: number,"max_workspace_budget_usd"?: number,"platform_daily_usd"?: number,"report_reserve_usd"?: number,"reports_per_user_day"?: number,"reports_per_workspace_hour"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"ai_usage": {
+                  Row: {
+                    "cache_read_tokens": number,"cache_write_tokens": number,"cost_usd": number,"created_at": string,"feature": string,"id": number,"input_tokens": number,"model": string,"output_tokens": number,"report_id": string | null,"settled_at": string | null,"user_id": string | null,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cache_read_tokens"?: number,"cache_write_tokens"?: number,"cost_usd": number,"created_at"?: string,"feature": string,"id"?: never,"input_tokens"?: number,"model": string,"output_tokens"?: number,"report_id"?: string | null,"settled_at"?: string | null,"user_id"?: string | null,"workspace_id": string
+                  }
+                  Update: {
+                    "cache_read_tokens"?: number,"cache_write_tokens"?: number,"cost_usd"?: number,"created_at"?: string,"feature"?: string,"id"?: never,"input_tokens"?: number,"model"?: string,"output_tokens"?: number,"report_id"?: string | null,"settled_at"?: string | null,"user_id"?: string | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_usage_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ai_usage_workspace_id_report_id_fkey"
+      columns: ["workspace_id","report_id"]
+isOneToOne: false
+      referencedRelation: "reports"
+      referencedColumns: ["workspace_id","id"]
+    }
+                  ]
+                },"club_seasons": {
                   Row: {
                     "avg_attendance": number,"capacity": number,"club_id": string,"league_id": string,"league_position": number,"season": number
                   }
@@ -217,16 +257,36 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"workspaces": {
+                },"reports": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": string,"name": string
+                    "content": Json | null,"created_at": string,"created_by": string | null,"error": string | null,"focus": string | null,"id": string,"model": string | null,"reviewed_at": string | null,"reviewed_by": string | null,"status": Database["public"]['Enums']["report_status"],"title": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string
+                    "content"?: Json | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"focus"?: string | null,"id"?: string,"model"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: Database["public"]['Enums']["report_status"],"title": string,"updated_at"?: string,"workspace_id": string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string
+                    "content"?: Json | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"focus"?: string | null,"id"?: string,"model"?: string | null,"reviewed_at"?: string | null,"reviewed_by"?: string | null,"status"?: Database["public"]['Enums']["report_status"],"title"?: string,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reports_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"workspaces": {
+                  Row: {
+                    "ai_monthly_budget_usd": number,"created_at": string,"created_by": string | null,"id": string,"name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "ai_monthly_budget_usd"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string
+                  }
+                  Update: {
+                    "ai_monthly_budget_usd"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string
                   }
                   Relationships: [
                     
@@ -247,6 +307,17 @@ isOneToOne: false
           Functions: {
             "add_member_by_email":
 { Args: { "p_email": string,"p_role": Database["public"]['Enums']["workspace_role"],"ws": string }; Returns: string
+                           },
+"ai_budget_status":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "budget_usd": number,"platform_cap_usd": number,"spent_usd": number,"workspace_budget_usd": number
+            }[]
+                           },
+"ai_effective_budget":
+{ Args: { "ws": string }; Returns: number
+                           },
+"ai_spend_this_month":
+{ Args: { "ws": string }; Returns: number
                            },
 "assert_can_assign":
 { Args: { "p_role": Database["public"]['Enums']["workspace_role"],"ws": string }; Returns: undefined
@@ -269,29 +340,35 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: string
                            },
 "dashboard_kpis":
-{ Args: Record<PropertyKey, never>; Returns: {
+{ Args: { "ws"?: string }; Returns: {
               "avg_won_value": number,"lost_12m_count": number,"open_count": number,"open_value": number,"stale_count": number,"won_12m_count": number,"won_quarter_count": number,"won_quarter_value": number
             }[]
                            },
 "dashboard_pipeline_by_stage":
-{ Args: Record<PropertyKey, never>; Returns: {
+{ Args: { "ws"?: string }; Returns: {
               "deals": number,"stage": Database["public"]['Enums']["opportunity_stage"],"value": number
             }[]
                            },
 "dashboard_upcoming":
-{ Args: Record<PropertyKey, never>; Returns: {
+{ Args: { "ws"?: string }; Returns: {
               "club_name": string,"expected_close_date": string,"id": string,"overdue": boolean,"stage": Database["public"]['Enums']["opportunity_stage"],"title": string,"value_gbp": number
             }[]
                            },
 "dashboard_value_by_tier":
-{ Args: Record<PropertyKey, never>; Returns: {
+{ Args: { "ws"?: string }; Returns: {
               "deals": number,"tier": number,"value": number
             }[]
                            },
 "dashboard_won_by_month":
-{ Args: Record<PropertyKey, never>; Returns: {
+{ Args: { "ws"?: string }; Returns: {
               "deals": number,"month": string,"value": number
             }[]
+                           },
+"fail_report":
+{ Args: { "p_error": string,"p_id": string,"p_model"?: string,"p_workspace": string }; Returns: undefined
+                           },
+"finish_report":
+{ Args: { "p_content": Json,"p_id": string,"p_model": string,"p_workspace": string }; Returns: undefined
                            },
 "is_member":
 { Args: { "ws": string }; Returns: boolean
@@ -310,6 +387,9 @@ isOneToOne: false
 "remove_member":
 { Args: { "p_user": string,"ws": string }; Returns: undefined
                            },
+"review_report":
+{ Args: { "p_decision": Database["public"]['Enums']["report_status"],"p_id": string }; Returns: undefined
+                           },
 "role_permissions":
 { Args: { "r": Database["public"]['Enums']["workspace_role"] }; Returns: (string)[]
                            },
@@ -319,8 +399,17 @@ isOneToOne: false
 "set_member_role":
 { Args: { "p_role": Database["public"]['Enums']["workspace_role"],"p_user": string,"ws": string }; Returns: undefined
                            },
+"settle_ai_usage":
+{ Args: { "p_cache_read": number,"p_cache_write": number,"p_cost": number,"p_input": number,"p_model": string,"p_output": number,"p_report": string,"p_workspace": string }; Returns: undefined
+                           },
+"start_report":
+{ Args: { "p_focus"?: string,"p_user": string,"p_workspace": string }; Returns: string
+                           },
 "switch_workspace":
 { Args: { "ws": string }; Returns: undefined
+                           },
+"user_can":
+{ Args: { "p_user": string,"perm": string,"ws": string }; Returns: boolean
                            },
 "workspace_members":
 { Args: { "ws": string }; Returns: {
@@ -329,7 +418,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "club_region": "england-north"|"england-midlands"|"england-south"|"scotland"|"wales"|"northern-ireland"|"ireland","opportunity_category": "sponsorship"|"hospitality"|"media"|"partnership"|"other","opportunity_stage": "lead"|"qualified"|"proposal"|"negotiation"|"won"|"lost","workspace_role": "owner"|"admin"|"analyst"|"viewer"
+            "club_region": "england-north"|"england-midlands"|"england-south"|"scotland"|"wales"|"northern-ireland"|"ireland","opportunity_category": "sponsorship"|"hospitality"|"media"|"partnership"|"other","opportunity_stage": "lead"|"qualified"|"proposal"|"negotiation"|"won"|"lost","report_status": "generating"|"draft"|"failed"|"approved"|"discarded","workspace_role": "owner"|"admin"|"analyst"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -449,7 +538,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "club_region": ["england-north", "england-midlands", "england-south", "scotland", "wales", "northern-ireland", "ireland"],"opportunity_category": ["sponsorship", "hospitality", "media", "partnership", "other"],"opportunity_stage": ["lead", "qualified", "proposal", "negotiation", "won", "lost"],"workspace_role": ["owner", "admin", "analyst", "viewer"]
+            "club_region": ["england-north", "england-midlands", "england-south", "scotland", "wales", "northern-ireland", "ireland"],"opportunity_category": ["sponsorship", "hospitality", "media", "partnership", "other"],"opportunity_stage": ["lead", "qualified", "proposal", "negotiation", "won", "lost"],"report_status": ["generating", "draft", "failed", "approved", "discarded"],"workspace_role": ["owner", "admin", "analyst", "viewer"]
           }
         }
 } as const
