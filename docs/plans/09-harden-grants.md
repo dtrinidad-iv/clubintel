@@ -1,6 +1,7 @@
 # 09 — Harden grants: deny by default
 
-**Status:** Proposed
+**Status:** Done
+**Commits:** `b6a004b` (db), `0df418b` (tests), `a95c25f` (claude)
 
 ## Goal
 Close the three privilege gaps `rls-reviewer` found in the foundation migration (plan 01) during plan 03, before plan 04 adds the first tenant tables. Afterwards, new tables and functions in `public` start with no access for `anon` or `authenticated`, and every migration grants exactly what it needs. Build this **before plan 04**.
@@ -66,3 +67,31 @@ The existing `foundation.test.sql` and `clubs.test.sql` must still pass unchange
 
 ## Commits after approval
 `feat(db): deny new tables and functions by default, drop extra grants`, `test: catalog-wide grant checks`, `chore(claude): grant rules in skills, CLAUDE.md and rls-reviewer`, then this plan → Done.
+
+## Notes from the build
+- **MAINTAIN.** The foundation tables showed `authenticated=rm` after the first pass. `m` is Postgres 17's MAINTAIN, which allows VACUUM, REINDEX and `LOCK TABLE` on tables every workspace shares. It's revoked too, and the tests check for it.
+- **Two more callable functions.** `authenticated` could execute 16 functions, not 14. `assert_can_assign` and `assert_can_manage_member` had picked up the old schema default. They're only called from the `security definer` member RPCs, which run as the owner, so the migration revokes them. Calling them directly could only raise an error, and only in a workspace where the caller already manages members.
+- **The global function default reaches `pg_temp` too.** `foundation.test.sql` creates a `pg_temp.id()` helper that `authenticated` calls, so it now grants itself execute (one line). The plan expected that file to stay unchanged. The `tests` schema helpers were already granted explicitly.
+- **Proving the tests bite.** Temporarily granting TRIGGER on `clubs` to `authenticated`, plus EXECUTE on a helper to `anon`, failed three checks (`grants.test.sql` 2 and 6, `clubs.test.sql` 27). Revoking them made everything pass again. The guard hook refused the first attempt because the command contained the word `truncate`, so TRIGGER stood in for it.
+- **Unchanged:** app behaviour (14 e2e tests) and database types (`npm run db:types` produced no diff).
+- **Reviews** (`code-reviewer`, `security-auditor`, `rls-reviewer`): no critical or high findings. Fixed from them:
+  - **`grants.test.sql` (now 17 checks):**
+    - materialized views and foreign tables (no RLS possible) can't be readable by `authenticated`;
+    - column-level REFERENCES is checked;
+    - views are checked by column privilege and any spelling of `security_invoker = true`;
+    - every `security definer` function pins `search_path = ""`;
+    - `search_path` is pinned so the allowlist reads the same everywhere;
+    - the behaviour checks read the rename back and read one's own profile.
+  - **Docs and skills:**
+    - the function default applies in every schema;
+    - `execute` is needed for anything that runs as the caller (policies, defaults, checks, invoker triggers);
+    - auth hooks grant only to `supabase_auth_admin`;
+    - no `serial` ids, extensions go in `extensions`, and schema objects are created only through migrations (Studio runs as `supabase_admin`);
+    - tenant tests need a `lives_ok` next to every `42501`, since a missing grant also raises 42501.
+- **The foundation tables only had SELECT because of a platform default.** Setting `auto_expose_new_tables = false` in `config.toml` (as `security-auditor` suggested) made `authenticated` lose `select` on `workspaces`, `profiles` and `memberships`. The foundation migration had never granted it; it only revoked what it didn't want. This migration now grants it explicitly. With the setting `true` or `false`, `anon` and `authenticated` end up with identical privileges and pgTAP passes both ways (checked by resetting with each). Only `service_role` differs.
+
+## Follow-ups
+- **`service_role` grants:** with auto-expose off, `service_role` keeps only `Dxtm` on new tables, with no select, insert or update. The app doesn't use it today. The first plan that does (alerts or cron, plan 07) grants it explicitly.
+- **Plan 08 (deploy docs):**
+  - the hosted project must run Postgres 17 (this migration revokes MAINTAIN);
+  - its Data API "expose new tables" setting must be off to match `config.toml`.

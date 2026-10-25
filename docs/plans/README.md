@@ -18,4 +18,4 @@ Write one with `/plan-task <description>`, or approve a plan in plan mode (Claud
 | 06 | [AI layer and intelligence reports](06-ai-intelligence-reports.md) | Proposed |
 | 07 | [Automated alerts](07-automated-alerts.md) | Proposed |
 | 08 | [CI, screenshots and deploy docs](08-ci-screenshots-deploy.md) | Proposed |
-| 09 | [Harden grants: deny by default](09-harden-grants.md) | Proposed |
+| 09 | [Harden grants: deny by default](09-harden-grants.md) | Done |
