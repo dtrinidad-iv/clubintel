@@ -16,6 +16,7 @@ Use `/new-migration`; its rules apply.
 2. **Triggers:** set `workspace_id` from `current_workspace_id()` on insert, refusing when it's null; refuse a change to `workspace_id`; keep `updated_at` current; and check that same-workspace references point inside the workspace.
 3. **Permissions:** add `<thing>.view`, `.write` and `.delete` to `role_permissions` (keep all existing ones). Default grants: everyone views, analyst and up write, admin and up delete, unless the plan says otherwise.
 4. **Policies:** one per command using `can()`. Enable RLS.
+5. **Grants:** `grant select, insert, update, delete on public.<things> to authenticated;` (nothing is granted by default; RLS decides which rows). Any function the app or a policy calls also needs `grant execute … to authenticated` and a line in the allowlist in `grants.test.sql`.
 
 ## Tests (pgTAP, `supabase/tests/database/<things>.test.sql`)
 Use the helpers from `000-setup-tests-hooks.sql`: `tests.create_user`, `tests.authenticate_as`, `tests.add_member`, `tests.clear_authentication`.
@@ -25,6 +26,7 @@ Use the helpers from `000-setup-tests-hooks.sql`: `tests.create_user`, `tests.au
   - can't insert into B, even by sending B's `workspace_id`: the trigger overwrites or refuses it;
   - can't reference B's rows by id.
 - **Permission matrix:** viewer, analyst, admin and owner × select, insert, update, delete.
+- **A positive case next to every negative one.** A missing grant raises 42501 too, so "A can't insert into B" would pass for the wrong reason. For each command, a `lives_ok` (and a read-back) proves the allowed role really can, before the `throws_ok … '42501'` proves the others can't.
 - **Prove the tests bite.** Temporarily loosen a policy to `using (true)`, run the tests and see them fail, then restore it. Mention it in the report.
 
 ## App

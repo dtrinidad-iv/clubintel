@@ -36,7 +36,9 @@ Commercial intelligence and club management for professional sports clubs. A mul
 
 ## Database conventions
 - Migrations only, via `/new-migration`. Never edit a committed migration (a hook blocks it); add a new one.
-- `security definer` only when needed, always with `set search_path = ''` and fully qualified names. Revoke `execute` from `public, anon`.
+- **Deny by default** (plan 09). New tables and sequences in `public`, and new functions in *any* schema (including `pg_temp` helpers in tests), get no privileges for `anon` or `authenticated`. Each migration grants what it needs: `grant select, insert, update, delete on … to authenticated` (RLS picks the rows), and `grant execute on function … to authenticated` for anything that runs as the caller (the app, a policy, a column default or check, an invoker trigger). Never TRUNCATE/REFERENCES/TRIGGER/MAINTAIN, never `anon`, no materialized views or foreign tables readable by `authenticated` (no RLS). `supabase/tests/database/grants.test.sql` checks the whole catalog and keeps an allowlist of callable functions. `auto_expose_new_tables = false` in `config.toml`; the hosted project must match.
+- Create schema objects only through migrations, never in Studio: Studio runs as `supabase_admin`, whose defaults still grant `anon` everything. Extensions go `with schema extensions`. Ids are `uuid` or `generated … as identity`, never `serial` (sequences aren't granted).
+- `security definer` only when needed, always with `set search_path = ''` and fully qualified names.
 - Views use `security_invoker = true`. Aggregates run as invoker so RLS filters them.
 - Postgres errors meant for users use `raise exception … using errcode` with `42501` (denied), `P0001` (rule), `P0002` (not found) or `23505` (duplicate). `dbError()` shows only those.
 - Test helpers: `supabase/tests/database/000-setup-tests-hooks.sql` (`tests.create_user`, `tests.authenticate_as`, `tests.add_member`).

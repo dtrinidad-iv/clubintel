@@ -35,13 +35,14 @@ By default, the uncommitted changes (`git diff HEAD` plus untracked files). For 
    - `set search_path = ''` and fully qualified names.
    - They check `auth.uid()`/`can()` themselves.
    - They take no workspace id that is trusted without a membership check.
-   - `execute` is revoked from `public`/`anon`.
+   - `execute` is granted to `authenticated` only if the app or a policy calls it, and never to `public`/`anon`.
    - They don't return more columns than the caller may see.
 6. **Views and RPCs:** views use `security_invoker = true`. Aggregates (dashboards, counts) run as invoker, so RLS filters them, or else filter by a membership-checked workspace.
-7. **Shared (non-tenant) tables:** read-only for `authenticated` with no write policies, and never joined in a way that exposes tenant data.
-8. **Leaks by inference:** unique constraints across workspaces (a name taken in B tells A it exists), error messages that confirm another workspace's ids, counts across all rows.
-9. **App queries** in `src/lib`: they run as the user (`createClient()` from `server.ts`). Any service-role client is justified, server-only, and scoped by explicit `workspace_id` conditions.
-10. **Tests.** Every tenant table has a pgTAP test where workspace A can't select, insert (even with B's `workspace_id`), update or delete B's rows, nor reference them. Plus a permission matrix.
+7. **Grants.** Default privileges in `public` deny everything to `anon` and `authenticated` (plan 09), so each migration grants explicitly. Check the grants match what the app uses, nothing goes to `anon`, no TRUNCATE/REFERENCES/TRIGGER/MAINTAIN goes to `authenticated`, and new callable functions are in the allowlist in `supabase/tests/database/grants.test.sql`. In the live DB: `pg_class.relacl`, `pg_proc.proacl`, `pg_default_acl`.
+8. **Shared (non-tenant) tables:** read-only for `authenticated` with no write policies, and never joined in a way that exposes tenant data.
+9. **Leaks by inference:** unique constraints across workspaces (a name taken in B tells A it exists), error messages that confirm another workspace's ids, counts across all rows.
+10. **App queries** in `src/lib`: they run as the user (`createClient()` from `server.ts`). Any service-role client is justified, server-only, and scoped by explicit `workspace_id` conditions.
+11. **Tests.** Every tenant table has a pgTAP test where workspace A can't select, insert (even with B's `workspace_id`), update or delete B's rows, nor reference them. Plus a permission matrix.
 
 ## Report
 Order by severity: **critical** (cross-workspace read or write), **high** (privilege escalation inside a workspace, or a missing isolation test for a new table), **medium** (inference leaks, missing `with check`), **low** (hardening). For each: `file:line`, the concrete scenario ("analyst in A calls … with B's id → gets …"), and the fix. Say which checks you ran against the live local database. If it's clean, say so plainly.
