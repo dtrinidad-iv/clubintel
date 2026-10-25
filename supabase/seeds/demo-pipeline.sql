@@ -51,7 +51,45 @@ from (values
 ) as o(club, contact, owner, title, partner, category, value, stage, close, notes)
 left join public.contacts c on c.name = o.contact;
 
+-- A year of closed deals for the dashboard, and an open one that's overdue. Close dates are
+-- relative, so the demo stays current.
+insert into public.opportunities (club_id, owner_id, title, partner_name, category, value_gbp, stage, expected_close_date)
+select pg_temp.club(o.club), o.owner::uuid, o.title, o.partner, o.category::public.opportunity_category,
+       o.value, o.stage::public.opportunity_stage, (current_date + o.close_in)::date
+from (values
+  ('Northbridge Athletic', '11111111-1111-4111-8111-111111111111', 'Kit supplier extension', 'Fellstride Outdoor', 'sponsorship', 145000, 'won', -330),
+  ('Kestrelby United', '22222222-2222-4222-8222-222222222222', 'Concourse naming', 'Quayside Motors', 'sponsorship', 90000, 'lost', -240),
+  ('Northbridge Athletic', '33333333-3333-4333-8333-333333333333', 'Stadium LED boards', 'Quayside Motors', 'media', 82000, 'won', -270),
+  ('Wrenfield Albion', '11111111-1111-4111-8111-111111111111', 'Family stand partner', 'Brightlane Energy', 'partnership', 120000, 'won', -210),
+  ('Glenmarrow Thistle', '33333333-3333-4333-8333-333333333333', 'Club podcast sponsorship', 'Northlight Media', 'media', 26000, 'won', -150),
+  ('Caerwen City', '22222222-2222-4222-8222-222222222222', 'Esports partnership', 'Northlight Media', 'partnership', 40000, 'lost', -90),
+  ('Northbridge Athletic', '22222222-2222-4222-8222-222222222222', 'Winter fixtures hospitality', 'Calderbrook Legal', 'hospitality', 58000, 'won', 0),
+  ('Kestrelby United', '33333333-3333-4333-8333-333333333333', 'Fan app sponsorship', 'Harbourline Ferries', 'media', 64000, 'negotiation', -5)
+) as o(club, owner, title, partner, category, value, stage, close_in);
+
 reset role;
+
+-- Backdate when deals reached their stage (triggers off, as postgres), spreading the closed
+-- deals over the year and leaving two leads stale. "Winter fixtures hospitality" stays at now,
+-- so there's always a win this quarter.
+set session_replication_role = replica;
+update public.opportunities o set stage_changed_at = now() - b.ago
+from (values
+  ('Kit supplier extension', interval '330 days'),
+  ('Concourse naming', interval '240 days'),
+  ('Stadium LED boards', interval '270 days'),
+  ('Family stand partner', interval '210 days'),
+  ('Club podcast sponsorship', interval '150 days'),
+  ('Esports partnership', interval '90 days'),
+  ('Matchday hospitality packages', interval '110 days'),
+  ('Highlights streaming rights', interval '65 days'),
+  ('Away-end hospitality refit', interval '55 days'),
+  ('Matchday programme advertising', interval '45 days'),
+  ('Youth academy partner', interval '40 days'),
+  ('Fan app sponsorship', interval '12 days')
+) as b(title, ago)
+where o.title = b.title and o.workspace_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+set session_replication_role = origin;
 
 -- Demo Sports Agency, as its owner -----------------------------------------
 
