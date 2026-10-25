@@ -178,8 +178,12 @@ function Sidebar({
     )
   }
 
-  if (isMobile) {
-    return (
+  // The desktop sidebar always renders (CSS hides it below md) and the sheet is added on
+  // mobile. Switching between them on isMobile broke hydration: the provider hydrates first and
+  // flips to mobile, then this streams in (Suspense) and hydrated as the sheet against desktop HTML.
+  // While the sheet is open the hidden desktop copy is left empty, so its contents exist once
+  // (apart from the sheet's ~300ms closing animation).
+  const mobileSheet = isMobile ? (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent
           dir={dir}
@@ -201,10 +205,11 @@ function Sidebar({
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>
-    )
-  }
+  ) : null
 
   return (
+    <>
+    {mobileSheet}
     <div
       className="group peer hidden text-sidebar-foreground md:block"
       data-state={state}
@@ -243,10 +248,11 @@ function Sidebar({
           data-slot="sidebar-inner"
           className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
         >
-          {children}
+          {isMobile && openMobile ? null : children}
         </div>
       </div>
     </div>
+    </>
   )
 }
 

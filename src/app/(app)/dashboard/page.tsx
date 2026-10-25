@@ -1,45 +1,47 @@
-import { Building2, ShieldCheck, Users } from "lucide-react";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { PageHeader } from "@/components/app/page-header";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { requireWorkspace } from "@/lib/dal";
-import { roleLabel } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
+import {
+  KpiFallback,
+  KpiTiles,
+  NationalSection,
+  SectionFallback,
+  StageSection,
+  TierSection,
+  UpcomingSection,
+  WonSection,
+} from "@/components/dashboard/dashboard-sections";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-export default async function DashboardPage() {
-  const { user, workspace } = await requireWorkspace();
-  const supabase = await createClient();
-  const { count } = await supabase
-    .from("memberships")
-    .select("*", { count: "exact", head: true })
-    .eq("workspace_id", workspace.id);
-
-  const cards = [
-    { label: "Workspace", value: workspace.name, icon: Building2 },
-    { label: "Your role", value: roleLabel(workspace.role), icon: ShieldCheck },
-    { label: "Members", value: String(count ?? 0), icon: Users },
-  ];
-
+// The header is static; each section streams in its own <Suspense>.
+export default function DashboardPage() {
   return (
     <>
-      <PageHeader
-        title={`Welcome${user.fullName ? `, ${user.fullName.split(" ")[0]}` : ""}`}
-        description="Commercial intelligence for your club, in one place."
-      />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((card) => (
-          <Card key={card.label}>
-            <CardHeader>
-              <CardDescription className="flex items-center gap-2">
-                <card.icon className="size-4" aria-hidden />
-                {card.label}
-              </CardDescription>
-              <CardTitle className="truncate text-xl">{card.value}</CardTitle>
-            </CardHeader>
-          </Card>
-        ))}
+      <PageHeader title="Dashboard" description="Your workspace's commercial pipeline, with national context from the club database." />
+      <div className="grid gap-4">
+        <Suspense fallback={<KpiFallback />}>
+          <KpiTiles />
+        </Suspense>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Suspense fallback={<SectionFallback label="pipeline by stage" />}>
+            <StageSection />
+          </Suspense>
+          <Suspense fallback={<SectionFallback label="wins by month" />}>
+            <WonSection />
+          </Suspense>
+          <Suspense fallback={<SectionFallback label="upcoming close dates" />}>
+            <UpcomingSection />
+          </Suspense>
+          <Suspense fallback={<SectionFallback label="pipeline by tier" />}>
+            <TierSection />
+          </Suspense>
+          <div className="lg:col-span-2">
+            <Suspense fallback={<SectionFallback label="national attendance" />}>
+              <NationalSection />
+            </Suspense>
+          </div>
+        </div>
       </div>
     </>
   );

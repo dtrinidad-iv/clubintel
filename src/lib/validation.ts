@@ -64,8 +64,11 @@ const optional = <T extends z.ZodType>(schema: T) =>
     return typeof first === "string" && first.trim() === "" ? undefined : first;
   }, schema.optional().catch(undefined));
 
+// Longest search text the list pages accept; links that search by a title cut it to this.
+export const SEARCH_MAX = 80;
+
 export const clubSearchSchema = z.object({
-  q: optional(z.string().trim().max(80)),
+  q: optional(z.string().trim().max(SEARCH_MAX)),
   league: optional(z.string().regex(/^[a-z0-9-]{1,40}$/)),
   region: optional(z.enum(CLUB_REGIONS)),
   tier: optional(z.coerce.number().int().min(1).max(10)),
@@ -144,7 +147,7 @@ export const contactSchema = z.object({
 export type ContactInput = z.infer<typeof contactSchema>;
 
 export const opportunityFiltersSchema = z.object({
-  q: optional(z.string().trim().max(80)),
+  q: optional(z.string().trim().max(SEARCH_MAX)),
   stage: optional(opportunityStageSchema),
   category: optional(z.enum(OPPORTUNITY_CATEGORIES)),
   owner: optional(z.union([z.uuid(), z.literal("none")])),
@@ -153,4 +156,4 @@ export const opportunityFiltersSchema = z.object({
 
 export type OpportunityFilters = z.infer<typeof opportunityFiltersSchema>;
 
-export const contactSearchSchema = z.object({ q: optional(z.string().trim().max(80)) });
+export const contactSearchSchema = z.object({ q: optional(z.string().trim().max(SEARCH_MAX)) });

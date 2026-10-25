@@ -10,6 +10,7 @@ Commercial intelligence and club management for professional sports clubs. It's 
 - **Roles and permissions.** Owner, admin, analyst and viewer map to permissions in one SQL function (`public.can()`), which policies and server code both use. You can only manage members ranked below you.
 - **Auth.** Email + password sign-up, sign-in and password reset through Supabase Auth, with sessions in cookies (`@supabase/ssr`).
 - **Commercial opportunities.** Each workspace tracks its sponsorship, hospitality, media and partnership deals against clubs. You get a table with filters in the URL, and a kanban board where cards move by drag and drop (mouse, touch or keyboard) or from a menu. Pipeline totals sit on top. Analysts and up create and move deals; admins and owners delete them.
+- **Intelligence dashboard.** Headline numbers for the active workspace: open pipeline, won this quarter, win rate, average deal size and stale deals. Charts show the pipeline by stage and by league tier and wins by month, with national attendance against capacity by tier for context. Upcoming close dates are listed with overdue deals first. Every number is aggregated in Postgres under RLS.
 - **Contacts.** The people behind each deal, at the club or on the partner side, can be linked to opportunities. The database guarantees a contact or owner always belongs to the same workspace.
 - **National club database.** A shared, searchable directory of 42 fictional clubs across five leagues and four tiers, with five seasons of attendance, capacity and league position. Filters live in the URL; each club has a profile with attendance and league position charts. It's reference data every workspace reads, so it has no workspace and no write access from the app.
 - **REST API.** `GET /api/v1/clubs` and `GET /api/v1/clubs/{id}` for external tools (see [API](#api)).
@@ -30,7 +31,7 @@ npm run dev                      # http://localhost:3020
 
 The database is created from `supabase/migrations/` and filled from `supabase/seed.sql` (accounts and workspaces) and `supabase/seeds/*.sql`. `npm run db:reset` rebuilds the **local** database from scratch.
 
-The club data in `supabase/seeds/clubs.sql` is generated: change `scripts/generate-clubs.mjs` and run `node scripts/generate-clubs.mjs`. The script is deterministic, so the same clubs and ids come out every time. `supabase/seeds/demo-pipeline.sql` adds demo contacts and opportunities to both workspaces. It's hand-written, and it signs in as the demo owners, so its rows go through the same triggers and RLS as the app's.
+The club data in `supabase/seeds/clubs.sql` is generated: change `scripts/generate-clubs.mjs` and run `node scripts/generate-clubs.mjs`. The script is deterministic, so the same clubs and ids come out every time. `supabase/seeds/demo-pipeline.sql` adds demo contacts and opportunities to both workspaces, with a year of won and lost deals dated relative to the reset, so the dashboard looks current after each `supabase db reset`. It's hand-written, and it signs in as the demo owners, so its rows go through the same triggers and RLS as the app's.
 
 ### Demo accounts
 

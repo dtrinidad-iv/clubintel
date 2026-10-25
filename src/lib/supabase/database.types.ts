@@ -268,6 +268,31 @@ isOneToOne: false
 "current_workspace_id":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"dashboard_kpis":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "avg_won_value": number,"lost_12m_count": number,"open_count": number,"open_value": number,"stale_count": number,"won_12m_count": number,"won_quarter_count": number,"won_quarter_value": number
+            }[]
+                           },
+"dashboard_pipeline_by_stage":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "deals": number,"stage": Database["public"]['Enums']["opportunity_stage"],"value": number
+            }[]
+                           },
+"dashboard_upcoming":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "club_name": string,"expected_close_date": string,"id": string,"overdue": boolean,"stage": Database["public"]['Enums']["opportunity_stage"],"title": string,"value_gbp": number
+            }[]
+                           },
+"dashboard_value_by_tier":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "deals": number,"tier": number,"value": number
+            }[]
+                           },
+"dashboard_won_by_month":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "deals": number,"month": string,"value": number
+            }[]
+                           },
 "is_member":
 { Args: { "ws": string }; Returns: boolean
                            },
@@ -276,6 +301,11 @@ isOneToOne: false
                            },
 "my_role":
 { Args: { "ws": string }; Returns: Database["public"]['Enums']["workspace_role"]
+                           },
+"national_attendance_by_tier":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "avg_attendance": number,"avg_capacity": number,"clubs": number,"season": number,"tier": number
+            }[]
                            },
 "remove_member":
 { Args: { "p_user": string,"ws": string }; Returns: undefined

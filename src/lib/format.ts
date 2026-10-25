@@ -87,3 +87,16 @@ const dateFormat = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "sh
 export function formatDate(date: string): string {
   return dateFormat.format(new Date(`${date}T00:00:00Z`));
 }
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// A month as YYYY-MM-DD → "Oct 26". Built by hand: locale data differs on "Sep" vs "Sept".
+export function formatMonth(date: string): string {
+  const [year, month] = date.split("-");
+  return `${MONTHS[Number(month) - 1]} ${year.slice(2)}`;
+}
+
+// A share from 0 to 1 → "67%".
+export function formatPercent(share: number): string {
+  return `${Math.round(share * 100)}%`;
+}
