@@ -86,7 +86,15 @@ from (values
   ('Away-end hospitality refit', interval '55 days'),
   ('Matchday programme advertising', interval '45 days'),
   ('Youth academy partner', interval '40 days'),
-  ('Fan app sponsorship', interval '12 days')
+  ('Fan app sponsorship', interval '12 days'),
+  -- The other open deals moved stage within the last month (so only the two leads are stale).
+  ('Community trust partnership', interval '6 days'),
+  ('Front-of-shirt sponsorship 2027-29', interval '9 days'),
+  ('Sleeve sponsorship', interval '15 days'),
+  ('Ironside Park executive boxes', interval '18 days'),
+  ('Welsh-language broadcast package', interval '21 days'),
+  ('Training kit partner', interval '24 days'),
+  ('Stadium naming rights', interval '27 days')
 ) as b(title, ago)
 where o.title = b.title and o.workspace_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 set session_replication_role = origin;
