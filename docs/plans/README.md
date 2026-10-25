@@ -15,7 +15,7 @@ Write one with `/plan-task <description>`, or approve a plan in plan mode (Claud
 | 03 | [National club database](03-national-club-database.md) | Done |
 | 04 | [Commercial opportunities](04-commercial-opportunities.md) | Done |
 | 05 | [Intelligence dashboard](05-intelligence-dashboard.md) | Done |
-| 06 | [AI layer and intelligence reports](06-ai-intelligence-reports.md) | Proposed |
+| 06 | [AI layer and intelligence reports](06-ai-intelligence-reports.md) | Done |
 | 07 | [Automated alerts](07-automated-alerts.md) | Proposed |
 | 08 | [CI, screenshots and deploy docs](08-ci-screenshots-deploy.md) | Proposed |
 | 09 | [Harden grants: deny by default](09-harden-grants.md) | Done |
