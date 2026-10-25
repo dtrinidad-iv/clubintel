@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ClubIntel
 
-## Getting Started
+Commercial intelligence and club management for professional sports clubs. It's a multi-tenant SaaS built with **Next.js 16, React 19, TypeScript, Supabase (Postgres + Auth + RLS), Tailwind CSS v4 and shadcn/ui**.
 
-First, run the development server:
+> A demo product. All clubs, people and organizations in the seed data are fictional.
+
+## Features
+
+- **Multi-tenant workspaces.** Each customer organization is a workspace, and users can belong to several and switch between them. Isolation is enforced in Postgres with row level security, not just in the UI.
+- **Roles and permissions.** Owner, admin, analyst and viewer map to permissions in one SQL function (`public.can()`), which policies and server code both use. You can only manage members ranked below you.
+- **Auth.** Email + password sign-up, sign-in and password reset through Supabase Auth, with sessions in cookies (`@supabase/ssr`).
+- **Responsive app shell.** The sidebar collapses on desktop and becomes a sheet on mobile, with a workspace switcher and account menu.
+
+Planned work, one plan file per feature, is in [`docs/plans/`](docs/plans/README.md).
+
+## Run it locally
+
+Requirements: Node 22 (`.nvmrc`), Docker (or colima), and the [Supabase CLI](https://supabase.com/docs/guides/local-development).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run db:start                 # local Supabase on ports 55321-55329
+cp .env.example .env.local       # then fill NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY from `supabase status`
+npm run dev                      # http://localhost:3020
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The database is created from `supabase/migrations/` and filled from `supabase/seed.sql`. `npm run db:reset` rebuilds the **local** database from scratch.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Demo accounts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Every demo account's password is `demo1234`.
 
-## Learn More
+| Email | Role |
+|---|---|
+| `owner@clubintel.test` | Owner of *Northbridge Athletic Commercial*, admin of *Demo Sports Agency* |
+| `admin@clubintel.test` | Admin of *Northbridge Athletic Commercial* |
+| `analyst@clubintel.test` | Analyst of *Northbridge Athletic Commercial* |
+| `viewer@clubintel.test` | Viewer of *Northbridge Athletic Commercial* |
+| `agency@clubintel.test` | Owner of *Demo Sports Agency* |
 
-To learn more about Next.js, take a look at the following resources:
+Emails sent locally (password reset, confirmation) appear in Mailpit at http://127.0.0.1:55324.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Checks
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Command | What it runs |
+|---|---|
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript |
+| `npm test` | Vitest unit tests |
+| `npm run test:db` | pgTAP tests in `supabase/tests/`, covering RLS isolation between workspaces and the permission matrix |
+| `npm run build` | Production build |
+| `npm run test:e2e` | Playwright end-to-end tests (desktop + mobile) against the production build |
 
-## Deploy on Vercel
+## Project layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/proxy.ts                 refreshes the session cookie; optimistic redirects only
+src/lib/dal.ts               Data Access Layer: current user, workspace and permissions
+src/lib/supabase/            server and browser clients, generated database types
+src/lib/workspace-actions.ts Server Actions for workspaces and members
+src/app/(auth)/              sign in, sign up, password reset
+src/app/(app)/               the signed-in app (sidebar layout)
+supabase/migrations/         schema, functions and RLS policies
+supabase/tests/database/     pgTAP tests
+e2e/                         Playwright tests
+docs/plans/                  one plan file per feature
+```
