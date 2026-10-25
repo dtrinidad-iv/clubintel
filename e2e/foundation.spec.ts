@@ -14,7 +14,7 @@ test("sign up, create a workspace and land on its dashboard", async ({ page }) =
   await page.getByRole("button", { name: "Create workspace" }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: "Welcome, Erin" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expect(page.getByTestId("current-workspace")).toHaveText("Test FC");
 });
 

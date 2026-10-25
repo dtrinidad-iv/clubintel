@@ -7,12 +7,12 @@ test("filter clubs by league, then open a club profile", async ({ page }) => {
   await expect(page).toHaveURL(/\/clubs$/);
   await expect(page.getByRole("status")).toContainText("42 clubs");
 
-  await page.getByLabel("League").click();
+  await page.getByRole("combobox", { name: "League", exact: true }).click();
   await page.getByRole("option", { name: "Demo League One" }).click();
   await expect(page).toHaveURL(/\/clubs\?league=league-one$/);
   await expect(page.getByRole("status")).toContainText("10 clubs");
-  await expect(page.locator("tbody tr")).toHaveCount(10);
-  for (const league of await page.locator("tbody tr td:nth-child(2)").allTextContents()) {
+  await expect(page.getByRole("table").locator("tbody tr")).toHaveCount(10);
+  for (const league of await page.getByRole("table").locator("tbody tr td:nth-child(2)").allTextContents()) {
     expect(league).toContain("Demo League One");
   }
 
@@ -47,7 +47,7 @@ test("pages through clubs, and a new filter starts at page 1", async ({ page }) 
   await page.getByRole("link", { name: "Next" }).click();
   await expect(page).toHaveURL(/\/clubs\?page=2$/);
   await expect(page.getByText("Page 2 of 3")).toBeVisible();
-  await page.getByLabel("Region").click();
+  await page.getByRole("combobox", { name: "Region", exact: true }).click();
   await page.getByRole("option", { name: "Wales" }).click();
   await expect(page).toHaveURL(/\/clubs\?region=wales$/); // a new filter starts at page 1
 });

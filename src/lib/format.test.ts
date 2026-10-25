@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatGbp, formatNumber, initials, ordinal, seasonLabel } from "./format";
+import { formatGbp, formatMonth, formatNumber, formatPercent, initials, ordinal, seasonLabel } from "./format";
 
 describe("initials", () => {
   it.each([
@@ -55,5 +55,25 @@ describe("formatGbp", () => {
     [1049, true, "£1k"],
   ])("%i (compact %s) → %s", (value, compact, expected) => {
     expect(formatGbp(value, { compact })).toBe(expected);
+  });
+});
+
+describe("formatMonth", () => {
+  it.each([
+    ["2026-10-01", "Oct 26"],
+    ["2025-09-01", "Sep 25"],
+    ["2030-01-01", "Jan 30"],
+  ])("%s → %s", (date, expected) => {
+    expect(formatMonth(date)).toBe(expected);
+  });
+});
+
+describe("formatPercent", () => {
+  it.each([
+    [0, "0%"],
+    [2 / 3, "67%"],
+    [1, "100%"],
+  ])("%d → %s", (share, expected) => {
+    expect(formatPercent(share)).toBe(expected);
   });
 });
