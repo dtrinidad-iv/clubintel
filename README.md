@@ -50,6 +50,8 @@ Emails sent locally (password reset, confirmation) appear in Mailpit at http://1
 | `npm run test:db` | pgTAP tests in `supabase/tests/`, covering RLS isolation between workspaces and the permission matrix |
 | `npm run build` | Production build |
 | `npm run test:e2e` | Playwright end-to-end tests (desktop + mobile) against the production build |
+| `npm run test:hooks` | Tests for the Claude Code hooks |
+| `.claude/skills/verify/verify.sh [all]` | All of the above, as CI runs them |
 
 ## Project layout
 
@@ -65,3 +67,13 @@ supabase/tests/database/     pgTAP tests
 e2e/                         Playwright tests
 docs/plans/                  one plan file per feature
 ```
+
+## Built with Claude Code
+
+This repo is developed with [Claude Code](https://claude.com/claude-code), using project rules and tooling that are checked in:
+
+- [`CLAUDE.md`](CLAUDE.md): the tenancy, database, Next.js and workflow rules Claude follows.
+- [`.claude/skills/`](.claude/skills): `/plan-task`, `/verify`, `/ship-plan`, `/new-migration` and `/tenant-feature`.
+- [`.claude/agents/`](.claude/agents): read-only reviewers for code, security, RLS and UI.
+- [`.claude/hooks/`](.claude/hooks): guards that block force-pushes, remote database resets, edits to committed migrations and secrets in code. They're tested in `tests/hooks.test.mjs`.
+- [`docs/plans/`](docs/plans/README.md): one plan per feature, from proposal to the commits that shipped it.
