@@ -18,6 +18,7 @@ Commercial intelligence and club management for professional sports clubs. A mul
 | All checks (what CI runs) | `.claude/skills/verify/verify.sh` (add `all` for e2e) |
 | Rebuild the **local** DB from migrations + seed | `supabase db reset < /dev/null` |
 | Regenerate DB types after a migration | `npm run db:types` |
+| Regenerate the club seed (`supabase/seeds/clubs.sql`) | `node scripts/generate-clubs.mjs` |
 | pgTAP / Vitest / hooks / e2e | `npm run test:db` / `npm test` / `npm run test:hooks` / `npm run test:e2e` |
 
 - Supabase CLI commands wait on stdin when it isn't a terminal: pass `< /dev/null` (`migration new`, `db reset`, `test db`).
@@ -30,7 +31,7 @@ Commercial intelligence and club management for professional sports clubs. A mul
 - **The active workspace is server state** (`profiles.current_workspace_id`), changed only by `switch_workspace()`, which checks membership. `current_workspace()` returns it only while the user is still a member.
 - **Never accept a workspace id from the client as proof of access.** Server code takes it from `requireWorkspace()`. Tenant tables get `workspace_id` from a trigger, and it can't change.
 - **Members** change only through RPCs with the rank rule: you act on people ranked below you and grant roles below your own. The owner is built in.
-- **Shared data** (e.g. the national club database) has no `workspace_id`, can be read by `authenticated`, and has no write policies.
+- **Shared data** (e.g. the national club database: `leagues`, `clubs`, `club_seasons`) has no `workspace_id`, can be read by `authenticated`, and has no write policies or grants. Its seed is generated (`scripts/`, into `supabase/seeds/`), never hand-edited.
 - **Every tenant table** needs a pgTAP test proving workspace A can't read, insert into, update, delete in, or reference workspace B. Recipe: `/tenant-feature`.
 
 ## Database conventions
@@ -42,8 +43,9 @@ Commercial intelligence and club management for professional sports clubs. A mul
 
 ## Next.js conventions
 - This Next.js has breaking changes from older versions: read `node_modules/next/dist/docs/` before using an API. Middleware is `src/proxy.ts`. After a mutation, call `refresh()` from `next/cache` (a redirect to the current URL doesn't re-render the layout).
-- **Cache Components:** anything that reads the request (the Supabase client, `cookies()`, `searchParams`) renders inside `<Suspense>`. The `(app)` layout wraps the sidebar and page in boundaries. `createClient()` calls `connection()`. Nothing random or time-based renders in the static shell.
+- **Cache Components:** anything that reads the request (the Supabase client, `cookies()`, `searchParams`, `params`) renders inside `<Suspense>`. The `(app)` layout's boundary only covers full page loads, so each page renders its static header and wraps its data in its own `<Suspense>` (see `clubs/page.tsx`); otherwise client navigations block and dev logs "uncached data … outside `<Suspense>`". `createClient()` calls `connection()`. Nothing random or time-based renders in the static shell.
 - **Data Access Layer** (`src/lib/dal.ts`, `server-only`): `getUser`, `requireUser`, `requireWorkspace`, `requirePermission`. Every page, Server Action and Route Handler starts there. `proxy.ts` only does optimistic redirects.
+- **Route Handlers** (`src/app/api/v1/`) start with `getUser()` and return `401` JSON rather than redirecting; parse query strings with the same zod schemas as the pages.
 - **Server Actions** live in `"use server"` files. They check the user or permission first, parse with the shared zod schema in `src/lib/validation.ts`, and return `ActionState` (`src/lib/action-state.ts`, with `values` so forms keep input). Then they `refresh()` or `redirect()`.
 - Supabase queries on the server use `createClient()` from `src/lib/supabase/server.ts` (as the user, under RLS). Typed with `database.types.ts`; regenerate after migrations.
 - UI: shadcn/ui components first (`npx shadcn@4.22.1 add <name>`). Pages use `PageHeader`, show empty, loading and error states, and show controls according to `workspace.permissions`. Layouts work at 390px.
