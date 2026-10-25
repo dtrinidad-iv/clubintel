@@ -1,7 +1,7 @@
 -- Privileges across the whole public schema: deny by default, grant explicitly. These checks
 -- read the catalog, so every future table, view, sequence and function is covered too.
 begin;
-select plan(17);
+select plan(18);
 -- regprocedure text drops the schema only for schemas on the path; pin it so the allowlist reads the same everywhere.
 set local search_path = public, extensions;
 
@@ -128,20 +128,22 @@ select is(
   ),
   array[
     'add_member_by_email(uuid,text,workspace_role)',
+    'ai_budget_status()',
     'can(uuid,text)',
     'create_workspace(text)',
     'current_workspace()',
     'current_workspace_id()',
-    'dashboard_kpis()',
-    'dashboard_pipeline_by_stage()',
-    'dashboard_upcoming()',
-    'dashboard_value_by_tier()',
-    'dashboard_won_by_month()',
+    'dashboard_kpis(uuid)',
+    'dashboard_pipeline_by_stage(uuid)',
+    'dashboard_upcoming(uuid)',
+    'dashboard_value_by_tier(uuid)',
+    'dashboard_won_by_month(uuid)',
     'is_member(uuid)',
     'my_permissions(uuid)',
     'my_role(uuid)',
     'national_attendance_by_tier()',
     'remove_member(uuid,uuid)',
+    'review_report(uuid,report_status)',
     'role_permissions(workspace_role)',
     'role_rank(workspace_role)',
     'set_member_role(uuid,uuid,workspace_role)',
@@ -149,6 +151,24 @@ select is(
     'workspace_members(uuid)'
   ],
   'authenticated executes exactly the allowlisted functions'
+);
+
+-- What only the server (service_role) may run: the AI report writes (plan 06).
+select is(
+  array(
+    select p.oid::regprocedure::text from pg_proc p
+    where p.pronamespace = 'public'::regnamespace
+      and has_function_privilege('service_role', p.oid, 'EXECUTE')
+      and not has_function_privilege('authenticated', p.oid, 'EXECUTE')
+    order by p.oid::regprocedure::text collate "C"
+  ),
+  array[
+    'fail_report(uuid,uuid,text,text)',
+    'finish_report(uuid,uuid,jsonb,text)',
+    'settle_ai_usage(uuid,uuid,text,integer,integer,integer,integer,numeric)',
+    'start_report(uuid,uuid,text)'
+  ],
+  'service_role alone executes exactly the server functions'
 );
 
 -- Defaults for objects created later -----------------------------------------
