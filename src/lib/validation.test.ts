@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { addMemberSchema, clubSearchQuery, parseClubSearch, safeNext, signUpSchema, workspaceNameSchema } from "./validation";
+import {
+  addMemberSchema,
+  clubSearchQuery,
+  contactSchema,
+  opportunityFiltersSchema,
+  opportunitySchema,
+  parseClubSearch,
+  safeNext,
+  signUpSchema,
+  workspaceNameSchema,
+} from "./validation";
 
 describe("safeNext", () => {
   it("keeps same-site paths", () => {
@@ -78,5 +88,104 @@ describe("clubSearchQuery", () => {
   it("round-trips through parseClubSearch", () => {
     const search = { q: "City", league: "championship", region: "ireland" as const, tier: 2, page: 2 };
     expect(parseClubSearch(new URLSearchParams(clubSearchQuery(search)))).toEqual(search);
+  });
+});
+
+const CLUB = "336a6d1c-8347-4ef9-91be-c5519ad0f40f";
+const form = (overrides: Record<string, string> = {}) => ({
+  title: " Shirt deal ",
+  partnerName: "Brightlane",
+  clubId: CLUB,
+  category: "sponsorship",
+  stage: "lead",
+  valueGbp: "£1,250,000.50",
+  ownerId: "",
+  contactId: "",
+  expectedCloseDate: "",
+  notes: "  ",
+  ...overrides,
+});
+
+describe("opportunitySchema", () => {
+  it("parses a form: trims, reads pounds, empty optionals become null", () => {
+    expect(opportunitySchema.parse(form())).toEqual({
+      title: "Shirt deal",
+      partnerName: "Brightlane",
+      clubId: CLUB,
+      category: "sponsorship",
+      stage: "lead",
+      valueGbp: 1250000.5,
+      ownerId: null,
+      contactId: null,
+      expectedCloseDate: null,
+      notes: null,
+    });
+  });
+
+  it("treats an empty value as zero and rounds to pence", () => {
+    expect(opportunitySchema.parse(form({ valueGbp: "" })).valueGbp).toBe(0);
+    expect(opportunitySchema.parse(form({ valueGbp: "10.555" })).valueGbp).toBe(10.56);
+  });
+
+  it.each([
+    ["title", { title: "  " }],
+    ["clubId", { clubId: "" }],
+    ["clubId", { clubId: "not-a-uuid" }],
+    ["category", { category: "bribery" }],
+    ["stage", { stage: "maybe" }],
+    ["valueGbp", { valueGbp: "-5" }],
+    ["valueGbp", { valueGbp: "lots" }],
+    ["valueGbp", { valueGbp: "99999999999" }],
+    ["ownerId", { ownerId: "someone" }],
+    ["expectedCloseDate", { expectedCloseDate: "next week" }],
+    ["notes", { notes: "x".repeat(2001) }],
+  ])("rejects a bad %s", (field, overrides) => {
+    const result = opportunitySchema.safeParse(form(overrides));
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual([field]);
+  });
+
+  it("never reads a workspace id from the form", () => {
+    const parsed = opportunitySchema.parse({ ...form(), workspaceId: CLUB, workspace_id: CLUB });
+    expect(parsed).not.toHaveProperty("workspaceId");
+    expect(parsed).not.toHaveProperty("workspace_id");
+  });
+});
+
+describe("contactSchema", () => {
+  it("normalises the email and nulls empty fields", () => {
+    expect(contactSchema.parse({ name: " Priya ", email: " Priya@Club.Example ", roleTitle: "", phone: "", clubId: "", notes: "" })).toEqual({
+      name: "Priya",
+      email: "priya@club.example",
+      roleTitle: null,
+      phone: null,
+      clubId: null,
+      notes: null,
+    });
+  });
+
+  it("refuses emails that would add mailto: headers, and phones that aren't numbers", () => {
+    const contact = (fields: Record<string, string>) => ({ name: "A", email: "", roleTitle: "", phone: "", clubId: "", notes: "", ...fields });
+    expect(contactSchema.safeParse(contact({ email: "a@b.co?subject=Pay" })).success).toBe(false);
+    expect(contactSchema.safeParse(contact({ phone: "123;ext=1" })).success).toBe(false);
+    expect(contactSchema.parse(contact({ phone: " +44 (20) 7946-0101 " })).phone).toBe("+44 (20) 7946-0101");
+  });
+
+  it("rejects a bad email and a missing name", () => {
+    expect(contactSchema.safeParse({ name: "A", email: "nope" }).success).toBe(false);
+    expect(contactSchema.safeParse({ name: " ", email: "" }).success).toBe(false);
+  });
+});
+
+describe("opportunityFiltersSchema", () => {
+  it("drops invalid filters and defaults to the table", () => {
+    expect(opportunityFiltersSchema.parse({ stage: "maybe", category: "media", owner: "none", view: "grid" })).toEqual({
+      q: undefined,
+      stage: undefined,
+      category: "media",
+      owner: "none",
+      view: "table",
+    });
+    expect(opportunityFiltersSchema.parse({ owner: "x", view: "board" })).toMatchObject({ owner: undefined, view: "board" });
   });
 });
