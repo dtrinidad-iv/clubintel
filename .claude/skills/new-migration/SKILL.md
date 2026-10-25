@@ -24,7 +24,7 @@ Committed migrations are never edited (a hook blocks it). Every schema change is
 ## Rules
 - **Every table** gets `alter table … enable row level security` in the same migration, and explicit policies `to authenticated` for each command it allows. No policy means no access, which is the right default for commands nobody needs.
 - **Grants are explicit.** New tables and sequences in `public`, and new functions in any schema, start with no access for `anon` or `authenticated` (deny by default, plan 09). Grant what the app needs in the same migration:
-  - tables: `grant select, insert, update, delete on public.<t> to authenticated;` (RLS decides which rows), or less if a command isn't used. Use column grants (`grant update (col) …`) when only some columns may change;
+  - tables: `grant select, delete on public.<t> to authenticated;` plus column grants for writes, `grant insert (<cols>), update (<cols>) …`, listing only the columns people edit (never `id`, `workspace_id`, `created_by` or timestamps). RLS decides which rows; leave out commands nobody uses;
   - functions that run as the caller (called by the app, a policy, a column default or check constraint, or a `security invoker` trigger): `grant execute on function public.<f>(<args>) to authenticated;`, then add it to the allowlist in `supabase/tests/database/grants.test.sql`;
   - Auth hooks (custom access token, before user created) grant execute to `supabase_auth_admin` only, plus whatever it reads (that role doesn't bypass RLS: grant and add a policy `to supabase_auth_admin`);
   - never grant TRUNCATE, REFERENCES, TRIGGER or MAINTAIN, never grant anything to `anon`, and never expose a materialized view or foreign table to `authenticated` (they have no RLS).
