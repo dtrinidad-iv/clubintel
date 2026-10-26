@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openSidebar, signIn, switchWorkspace } from "./helpers";
 
 // Runs against the seeded demo workspace. Each test names its rows uniquely, so reruns don't collide.

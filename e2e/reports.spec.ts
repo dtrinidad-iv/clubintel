@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { signIn } from "./helpers";
 
 // The server runs with AI_PROVIDER=fake (playwright.config.ts): a fixed sample report, no network.

@@ -1,6 +1,6 @@
 -- Workspaces, memberships and permissions: workspace A can't see or change workspace B.
 begin;
-select plan(33);
+select plan(34);
 
 -- Setup: owner A of workspace A (with an admin, analyst and viewer), owner B of workspace B.
 create temp table ids (k text primary key, v uuid) on commit drop;
@@ -76,6 +76,14 @@ select throws_ok(format('select public.remove_member(%L, %L)', pg_temp.id('ws_a'
 select throws_ok(format('select public.set_member_role(%L, %L, %L)', pg_temp.id('ws_a'), pg_temp.id('admin_a'), 'viewer'), '42501', null, 'nobody changes their own role');
 select tests.authenticate_as(pg_temp.id('owner_a'));
 select throws_ok(format('select public.add_member_by_email(%L, %L, %L)', pg_temp.id('ws_a'), 'outsider@test.local', 'owner'), '42501', null, 'nobody grants owner');
+-- An account whose email isn't confirmed is treated as no account.
+select tests.clear_authentication();
+update auth.users set email_confirmed_at = null where email = 'outsider@test.local';
+select tests.authenticate_as(pg_temp.id('owner_a'));
+select throws_ok(format('select public.add_member_by_email(%L, %L, %L)', pg_temp.id('ws_a'), 'outsider@test.local', 'admin'), 'P0002', 'No account uses that email', 'an unconfirmed account can''t be added');
+select tests.clear_authentication();
+update auth.users set email_confirmed_at = now() where email = 'outsider@test.local';
+select tests.authenticate_as(pg_temp.id('owner_a'));
 select lives_ok(format('select public.add_member_by_email(%L, %L, %L)', pg_temp.id('ws_a'), 'OUTSIDER@test.local', 'admin'), 'owner adds an admin by email (case-insensitive)');
 
 -- Removal ends access at once

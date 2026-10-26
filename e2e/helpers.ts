@@ -11,10 +11,13 @@ export async function signIn(page: Page, email: string, password = PASSWORD) {
 }
 
 export async function openSidebar(page: Page) {
-  // On mobile the sidebar is a sheet behind the toggle.
-  if (await page.getByRole("button", { name: "Switch workspace" }).isHidden()) {
+  // On mobile (below md) the sidebar is a sheet behind the toggle. Decide by width, not by
+  // whether the switcher is visible yet: while the sidebar is still streaming in, a desktop
+  // check would wrongly click the toggle and collapse it.
+  if ((page.viewportSize()?.width ?? 1280) < 768) {
     await page.getByRole("button", { name: "Toggle Sidebar" }).click();
   }
+  await expect(page.getByRole("button", { name: "Switch workspace" })).toBeVisible();
 }
 
 export async function switchWorkspace(page: Page, name: string) {

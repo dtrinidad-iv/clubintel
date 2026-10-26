@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openSidebar, signIn } from "./helpers";
 
 test("filter clubs by league, then open a club profile", async ({ page }) => {

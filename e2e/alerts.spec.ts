@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { signIn } from "./helpers";
 
 // The full flow runs in a new workspace each time, so repeated runs don't depend on read state

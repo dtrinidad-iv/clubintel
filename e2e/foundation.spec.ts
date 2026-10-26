@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { signIn, switchWorkspace } from "./helpers";
 
 test("sign up, create a workspace and land on its dashboard", async ({ page }) => {
