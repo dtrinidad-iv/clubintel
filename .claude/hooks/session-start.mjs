@@ -16,6 +16,8 @@ if (existsSync(index)) {
     .map((m) => `- ${m[1]} ${m[4]}: ${m[2]} (docs/plans/${m[3]})`);
   if (open.length) {
     lines.push("Open plans (docs/plans/README.md):", ...open, "Read a plan before continuing it. New work: plan first (/plan-task or plan mode).");
+  } else {
+    lines.push("No open plans. New work: plan first (/plan-task or plan mode).");
   }
 }
 

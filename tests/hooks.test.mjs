@@ -2,6 +2,8 @@
 // Claude Code sends on stdin. Run: npm run test:hooks
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -9,10 +11,10 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const HOOKS = join(ROOT, ".claude/hooks");
 
-function run(hook, event) {
+function run(hook, event, projectDir = ROOT) {
   const r = spawnSync(process.execPath, [join(HOOKS, hook)], {
     input: JSON.stringify(event),
-    env: { ...process.env, CLAUDE_PROJECT_DIR: ROOT },
+    env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir },
     encoding: "utf8",
   });
   let decision = null;
@@ -104,10 +106,24 @@ test("post-edit: ignores files that aren't TypeScript", () => {
   assert.equal(r.code, 0);
 });
 
-test("session-start: lists open plans", () => {
-  const r = run("session-start.mjs", { hook_event_name: "SessionStart" });
+// Against a fixture plans index, so the result doesn't depend on which plans are open today.
+function sessionContext(rows) {
+  const dir = mkdtempSync(join(tmpdir(), "hooks-test-"));
+  mkdirSync(join(dir, "docs/plans"), { recursive: true });
+  writeFileSync(join(dir, "docs/plans/README.md"), ["| # | Plan | Status |", "|---|---|---|", ...rows].join("\n"));
+  const r = run("session-start.mjs", { hook_event_name: "SessionStart" }, dir);
   assert.equal(r.code, 0);
-  const context = JSON.parse(r.stdout).hookSpecificOutput.additionalContext;
+  return JSON.parse(r.stdout).hookSpecificOutput.additionalContext;
+}
+
+test("session-start: lists open plans", () => {
+  const context = sessionContext(["| 01 | [Foundation](01-foundation.md) | Done |", "| 02 | [Alerts](02-alerts.md) | WIP |"]);
   assert.match(context, /Open plans/);
+  assert.match(context, /02 WIP: Alerts/);
   assert.doesNotMatch(context, /01 Done/);
+});
+
+test("session-start: says so when no plan is open", () => {
+  const context = sessionContext(["| 01 | [Foundation](01-foundation.md) | Done |"]);
+  assert.match(context, /No open plans/);
 });
