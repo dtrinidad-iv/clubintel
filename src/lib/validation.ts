@@ -147,6 +147,8 @@ export const contactSchema = z.object({
 export type ContactInput = z.infer<typeof contactSchema>;
 
 export const opportunityFiltersSchema = z.object({
+  // One exact deal, for links from alerts and the dashboard.
+  id: optional(z.uuid()),
   q: optional(z.string().trim().max(SEARCH_MAX)),
   stage: optional(opportunityStageSchema),
   category: optional(z.enum(OPPORTUNITY_CATEGORIES)),
@@ -171,3 +173,33 @@ export const aiBudgetSchema = z.object({
 });
 
 export const reviewDecisionSchema = z.enum(["approved", "discarded"]);
+
+// Alert rules (plan 07). Each type takes its own parameters; the database checks them again.
+export const ALERT_RULE_TYPES = ["stale_opportunity", "close_date_passed", "attendance_drop"] as const;
+
+// An empty field is missing, not 0 (z.coerce turns "" into 0).
+const wholeNumber = (min: number, max: number, label: string) =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.coerce
+      .number({ error: `Enter ${label}` })
+      .int({ error: `Enter ${label}` })
+      .min(min, { error: `Use ${min} or more` })
+      .max(max, { error: `Use ${max} or less` }),
+  );
+
+export const alertRuleSchema = z.discriminatedUnion(
+  "type",
+  [
+    z.object({ type: z.literal("stale_opportunity"), days: wholeNumber(1, 365, "a number of days") }),
+    z.object({ type: z.literal("close_date_passed"), days: wholeNumber(0, 90, "a number of days") }),
+    z.object({
+      type: z.literal("attendance_drop"),
+      clubId: z.uuid({ error: "Choose a club" }),
+      dropPct: wholeNumber(1, 90, "a percentage"),
+    }),
+  ],
+  { error: "Choose what to watch" },
+);
+
+export type AlertRuleInput = z.infer<typeof alertRuleSchema>;

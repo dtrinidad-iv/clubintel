@@ -88,16 +88,10 @@ export function TextareaField({
 }
 
 // A Radix select that submits through a hidden input, so optional fields can send "" for
-// "none" (Radix items can't have an empty value).
-export function SelectField({
-  name,
-  label,
-  state,
-  options,
-  defaultValue,
-  emptyLabel,
-  required,
-}: {
+// "none" (Radix items can't have an empty value). After a failed submit, React resets the form
+// and Radix's Select follows the reset back to the value it mounted with; like Field, the select
+// remounts keyed on the submitted value, so it comes back showing what was sent.
+export function SelectField(props: {
   name: string;
   label: string;
   state: ActionState;
@@ -105,7 +99,23 @@ export function SelectField({
   defaultValue?: string | null;
   emptyLabel?: string;
   required?: boolean;
+  // For forms whose other fields depend on this choice.
+  onValueChange?: (value: string) => void;
 }) {
+  const shown = shownValue(props.state, props.name, props.defaultValue);
+  return <SelectFieldControl key={shown.key} {...props} defaultValue={shown.defaultValue} />;
+}
+
+function SelectFieldControl({
+  name,
+  label,
+  state,
+  options,
+  defaultValue,
+  emptyLabel,
+  required,
+  onValueChange,
+}: React.ComponentProps<typeof SelectField>) {
   const NONE = "__none";
   const [value, setValue] = useState(defaultValue || (emptyLabel ? NONE : ""));
   const errors = state?.fieldErrors?.[name];
@@ -114,7 +124,14 @@ export function SelectField({
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
       {/* Always controlled: "" shows the placeholder. */}
-      <Select value={value} onValueChange={setValue} required={required}>
+      <Select
+        value={value}
+        onValueChange={(v) => {
+          setValue(v);
+          onValueChange?.(v === NONE ? "" : v);
+        }}
+        required={required}
+      >
         <SelectTrigger id={id} className="w-full" aria-invalid={errors ? true : undefined} aria-describedby={errors ? errorId : undefined}>
           <SelectValue placeholder={`Choose ${label.toLowerCase()}`} />
         </SelectTrigger>

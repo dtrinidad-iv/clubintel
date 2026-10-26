@@ -38,7 +38,7 @@ async function Opportunities({ searchParams }: { searchParams: PageProps<"/oppor
         view={view}
         canWrite={can("opportunities.write")}
         canDelete={can("opportunities.delete")}
-        filtered={Boolean(query.q || query.stage || query.category || query.owner)}
+        filtered={Boolean(query.id || query.q || query.stage || query.category || query.owner)}
         truncated={rows.length === OPPORTUNITY_LIMIT}
       />
     </OwnerNamesProvider>

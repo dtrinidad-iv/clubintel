@@ -63,6 +63,122 @@ isOneToOne: false
       referencedColumns: ["workspace_id","id"]
     }
                   ]
+                },"alert_reads": {
+                  Row: {
+                    "alert_id": string,"read_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alert_id": string,"read_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "alert_id"?: string,"read_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "alert_reads_alert_id_fkey"
+      columns: ["alert_id"]
+isOneToOne: false
+      referencedRelation: "alerts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"alert_rules": {
+                  Row: {
+                    "club_id": string | null,"created_at": string,"created_by": string | null,"days": number | null,"drop_pct": number | null,"enabled": boolean,"id": string,"last_run_at": string | null,"type": Database["public"]['Enums']["alert_rule_type"],"updated_at": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"days"?: number | null,"drop_pct"?: number | null,"enabled"?: boolean,"id"?: string,"last_run_at"?: string | null,"type": Database["public"]['Enums']["alert_rule_type"],"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Update: {
+                    "club_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"days"?: number | null,"drop_pct"?: number | null,"enabled"?: boolean,"id"?: string,"last_run_at"?: string | null,"type"?: Database["public"]['Enums']["alert_rule_type"],"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "alert_rules_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "club_directory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alert_rules_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "clubs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alert_rules_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"alert_runs": {
+                  Row: {
+                    "last_run_at": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "last_run_at": string,"workspace_id": string
+                  }
+                  Update: {
+                    "last_run_at"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "alert_runs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: true
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"alerts": {
+                  Row: {
+                    "body": string,"club_id": string | null,"created_at": string,"dedup_key": string,"id": string,"opportunity_id": string | null,"rule_id": string | null,"title": string,"type": Database["public"]['Enums']["alert_rule_type"],"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"club_id"?: string | null,"created_at"?: string,"dedup_key": string,"id"?: string,"opportunity_id"?: string | null,"rule_id"?: string | null,"title": string,"type": Database["public"]['Enums']["alert_rule_type"],"workspace_id": string
+                  }
+                  Update: {
+                    "body"?: string,"club_id"?: string | null,"created_at"?: string,"dedup_key"?: string,"id"?: string,"opportunity_id"?: string | null,"rule_id"?: string | null,"title"?: string,"type"?: Database["public"]['Enums']["alert_rule_type"],"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "alerts_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "club_directory"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alerts_club_id_fkey"
+      columns: ["club_id"]
+isOneToOne: false
+      referencedRelation: "clubs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alerts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alerts_workspace_id_opportunity_id_fkey"
+      columns: ["workspace_id","opportunity_id"]
+isOneToOne: false
+      referencedRelation: "opportunities"
+      referencedColumns: ["workspace_id","id"]
+    },{
+      foreignKeyName: "alerts_workspace_id_rule_id_fkey"
+      columns: ["workspace_id","rule_id"]
+isOneToOne: false
+      referencedRelation: "alert_rules"
+      referencedColumns: ["workspace_id","id"]
+    }
+                  ]
                 },"club_seasons": {
                   Row: {
                     "avg_attendance": number,"capacity": number,"club_id": string,"league_id": string,"league_position": number,"season": number
@@ -364,6 +480,12 @@ isOneToOne: false
               "deals": number,"month": string,"value": number
             }[]
                            },
+"evaluate_all_alerts":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"evaluate_rules":
+{ Args: { "ws": string }; Returns: number
+                           },
 "fail_report":
 { Args: { "p_error": string,"p_id": string,"p_model"?: string,"p_workspace": string }; Returns: undefined
                            },
@@ -372,6 +494,12 @@ isOneToOne: false
                            },
 "is_member":
 { Args: { "ws": string }; Returns: boolean
+                           },
+"mark_alert_read":
+{ Args: { "p_alert": string }; Returns: undefined
+                           },
+"mark_all_alerts_read":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "my_permissions":
 { Args: { "ws": string }; Returns: (string)[]
@@ -383,6 +511,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: {
               "avg_attendance": number,"avg_capacity": number,"clubs": number,"season": number,"tier": number
             }[]
+                           },
+"plural_days":
+{ Args: { "n": number }; Returns: string
                            },
 "remove_member":
 { Args: { "p_user": string,"ws": string }; Returns: undefined
@@ -396,6 +527,9 @@ isOneToOne: false
 "role_rank":
 { Args: { "r": Database["public"]['Enums']["workspace_role"] }; Returns: number
                            },
+"run_alert_checks":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "set_member_role":
 { Args: { "p_role": Database["public"]['Enums']["workspace_role"],"p_user": string,"ws": string }; Returns: undefined
                            },
@@ -408,6 +542,9 @@ isOneToOne: false
 "switch_workspace":
 { Args: { "ws": string }; Returns: undefined
                            },
+"unread_alert_count":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
 "user_can":
 { Args: { "p_user": string,"perm": string,"ws": string }; Returns: boolean
                            },
@@ -418,7 +555,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "club_region": "england-north"|"england-midlands"|"england-south"|"scotland"|"wales"|"northern-ireland"|"ireland","opportunity_category": "sponsorship"|"hospitality"|"media"|"partnership"|"other","opportunity_stage": "lead"|"qualified"|"proposal"|"negotiation"|"won"|"lost","report_status": "generating"|"draft"|"failed"|"approved"|"discarded","workspace_role": "owner"|"admin"|"analyst"|"viewer"
+            "alert_rule_type": "stale_opportunity"|"close_date_passed"|"attendance_drop","club_region": "england-north"|"england-midlands"|"england-south"|"scotland"|"wales"|"northern-ireland"|"ireland","opportunity_category": "sponsorship"|"hospitality"|"media"|"partnership"|"other","opportunity_stage": "lead"|"qualified"|"proposal"|"negotiation"|"won"|"lost","report_status": "generating"|"draft"|"failed"|"approved"|"discarded","workspace_role": "owner"|"admin"|"analyst"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -538,7 +675,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "club_region": ["england-north", "england-midlands", "england-south", "scotland", "wales", "northern-ireland", "ireland"],"opportunity_category": ["sponsorship", "hospitality", "media", "partnership", "other"],"opportunity_stage": ["lead", "qualified", "proposal", "negotiation", "won", "lost"],"report_status": ["generating", "draft", "failed", "approved", "discarded"],"workspace_role": ["owner", "admin", "analyst", "viewer"]
+            "alert_rule_type": ["stale_opportunity", "close_date_passed", "attendance_drop"],"club_region": ["england-north", "england-midlands", "england-south", "scotland", "wales", "northern-ireland", "ireland"],"opportunity_category": ["sponsorship", "hospitality", "media", "partnership", "other"],"opportunity_stage": ["lead", "qualified", "proposal", "negotiation", "won", "lost"],"report_status": ["generating", "draft", "failed", "approved", "discarded"],"workspace_role": ["owner", "admin", "analyst", "viewer"]
           }
         }
 } as const

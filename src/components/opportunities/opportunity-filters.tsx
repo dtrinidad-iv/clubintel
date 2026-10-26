@@ -16,6 +16,7 @@ const ALL = "all";
 
 export function opportunitiesHref(filters: Partial<Filters>) {
   const params = new URLSearchParams();
+  if (filters.id) params.set("id", filters.id);
   if (filters.q) params.set("q", filters.q);
   if (filters.stage) params.set("stage", filters.stage);
   if (filters.category) params.set("category", filters.category);
@@ -32,11 +33,12 @@ export function OpportunityFilters({ filters: current, members }: { filters: Fil
   const [pending, startTransition] = useTransition();
   const [filters, setFilters] = useOptimistic(current);
   const queryInput = useRef<HTMLInputElement>(null);
-  const filtered = Boolean(filters.q || filters.stage || filters.category || filters.owner);
+  const filtered = Boolean(filters.id || filters.q || filters.stage || filters.category || filters.owner);
 
   function apply(change: Partial<Filters>) {
     const q = queryInput.current?.value.trim() || undefined;
-    const next = { ...filters, q, ...change };
+    // Any change leaves the single-deal view a link opened.
+    const next = { ...filters, id: undefined, q, ...change };
     startTransition(() => {
       setFilters(next);
       router.push(opportunitiesHref(next));

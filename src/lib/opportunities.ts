@@ -14,6 +14,7 @@ const OPPORTUNITY_COLUMNS =
 export async function listOpportunities(workspaceId: string, filters: Omit<OpportunityFilters, "view">) {
   const supabase = await createClient();
   let query = supabase.from("opportunities").select(OPPORTUNITY_COLUMNS).eq("workspace_id", workspaceId);
+  if (filters.id) query = query.eq("id", filters.id);
   if (filters.q) query = query.ilike("search_text", likePattern(filters.q));
   if (filters.stage) query = query.eq("stage", filters.stage);
   if (filters.category) query = query.eq("category", filters.category);

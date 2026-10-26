@@ -134,3 +134,13 @@ const REPORT_STATUS_LABELS = {
 export function reportStatusLabel(status: keyof typeof REPORT_STATUS_LABELS): string {
   return REPORT_STATUS_LABELS[status];
 }
+
+const ALERT_RULE_TYPE_LABELS = {
+  stale_opportunity: "A deal goes quiet",
+  close_date_passed: "A close date passes",
+  attendance_drop: "A club's attendance drops",
+} as const;
+
+export function alertRuleTypeLabel(type: keyof typeof ALERT_RULE_TYPE_LABELS): string {
+  return ALERT_RULE_TYPE_LABELS[type];
+}

@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { requireWorkspace } from "@/lib/dal";
 import { getKpis, getNationalAttendance, getPipelineByStage, getUpcoming, getValueByTier, getWonByMonth } from "@/lib/dashboard";
 import { formatDate, formatGbp, formatMonth, formatNumber, formatPercent, seasonLabel, stageLabel } from "@/lib/format";
-import { SEARCH_MAX } from "@/lib/validation";
 
 // Each section loads on its own, inside its own <Suspense> on the page. The pipeline sections
 // need opportunities.view; every role has it today, but they check rather than assume.
@@ -138,7 +137,7 @@ export async function UpcomingSection() {
             <li key={d.id} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
               <div className="min-w-0">
                 <Link
-                  href={`/opportunities?q=${encodeURIComponent(d.title.slice(0, SEARCH_MAX))}`}
+                  href={`/opportunities?id=${d.id}`}
                   className="block truncate font-medium underline-offset-4 hover:underline"
                 >
                   {d.title}
