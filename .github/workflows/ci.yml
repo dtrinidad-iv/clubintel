@@ -1,0 +1,78 @@
+# Every check on every push to main and every PR: the same steps as
+# .claude/skills/verify/verify.sh all. Needs no repository secrets: it runs against a local
+# Supabase stack, whose keys are development defaults, and the fake AI provider.
+# Actions are pinned to commit SHAs (a moved tag can't change what runs); the comment is the
+# release each SHA is.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+        with:
+          version: 2.122.0
+
+      - name: Start local Supabase
+        run: npm run db:start
+
+      - name: Write .env.local from the local stack
+        run: |
+          supabase status -o json > /tmp/supabase-status.json
+          node -e '
+            const s = require("/tmp/supabase-status.json");
+            const lines = [
+              `NEXT_PUBLIC_SUPABASE_URL=${s.API_URL}`,
+              `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${s.PUBLISHABLE_KEY}`,
+              `SUPABASE_SECRET_KEY=${s.SECRET_KEY}`,
+              "AI_PROVIDER=fake",
+            ];
+            require("fs").writeFileSync(".env.local", lines.join("\n") + "\n");
+          '
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:hooks
+      - name: pgTAP
+        run: supabase test db < /dev/null
+      - run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Playwright
+        run: npm run test:e2e
+
+      - name: Upload Playwright report and traces
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
