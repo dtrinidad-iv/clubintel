@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  alertRuleSchema,
   addMemberSchema,
   clubSearchQuery,
   contactSchema,
@@ -187,5 +188,41 @@ describe("opportunityFiltersSchema", () => {
       view: "table",
     });
     expect(opportunityFiltersSchema.parse({ owner: "x", view: "board" })).toMatchObject({ owner: undefined, view: "board" });
+  });
+
+  it("takes one exact deal by id, and ignores an id that isn't one", () => {
+    const id = "4b7a2f0e-8c1d-4e5f-9a6b-1c2d3e4f5a6b";
+    expect(opportunityFiltersSchema.parse({ id }).id).toBe(id);
+    expect(opportunityFiltersSchema.parse({ id: "1 or 1=1" }).id).toBeUndefined();
+  });
+});
+
+describe("alertRuleSchema", () => {
+  const clubId = "4b7a2f0e-8c1d-4e5f-9a6b-1c2d3e4f5a6b";
+
+  it.each([
+    [{ type: "stale_opportunity", days: "30" }, { type: "stale_opportunity", days: 30 }],
+    [{ type: "close_date_passed", days: "0" }, { type: "close_date_passed", days: 0 }],
+    [{ type: "attendance_drop", clubId, dropPct: "10" }, { type: "attendance_drop", clubId, dropPct: 10 }],
+  ])("accepts %j", (input, expected) => {
+    expect(alertRuleSchema.parse(input)).toEqual(expected);
+  });
+
+  it.each([
+    [{ type: "stale_opportunity", days: "0" }, "days", "Use 1 or more"],
+    [{ type: "stale_opportunity", days: "2.5" }, "days", "Enter a number of days"],
+    [{ type: "close_date_passed", days: "91" }, "days", "Use 90 or less"],
+    [{ type: "close_date_passed", days: "" }, "days", "Enter a number of days"],
+    [{ type: "stale_opportunity", days: "  " }, "days", "Enter a number of days"],
+    [{ type: "attendance_drop", dropPct: "10" }, "clubId", "Choose a club"],
+    [{ type: "attendance_drop", clubId, dropPct: "95" }, "dropPct", "Use 90 or less"],
+  ])("refuses %j", (input, field, message) => {
+    const result = alertRuleSchema.safeParse(input);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.find((i) => i.path[0] === field)?.message).toBe(message);
+  });
+
+  it("refuses an unknown type", () => {
+    expect(alertRuleSchema.safeParse({ type: "everything" }).success).toBe(false);
   });
 });

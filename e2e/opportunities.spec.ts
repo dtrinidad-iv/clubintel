@@ -135,6 +135,11 @@ test("the dialog validates inline and gives focus back when it closes", async ({
   await expect(dialog.getByText("Enter a title")).toBeVisible();
   await expect(dialog.getByText("Choose a club")).toBeVisible();
   await expect(dialog.getByRole("combobox", { name: "Club" })).toHaveAttribute("aria-invalid", "true");
+  // Choices made before a failed submit are kept (selects included).
+  await pick(dialog, "Stage", "Won");
+  await dialog.getByRole("button", { name: "Add opportunity" }).click();
+  await expect(dialog.getByText("Enter a title")).toBeVisible();
+  await expect(dialog.getByRole("combobox", { name: "Stage", exact: true })).toHaveText("Won");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(newButton).toBeFocused();

@@ -1,7 +1,7 @@
 -- Privileges across the whole public schema: deny by default, grant explicitly. These checks
 -- read the catalog, so every future table, view, sequence and function is covered too.
 begin;
-select plan(18);
+select plan(19);
 -- regprocedure text drops the schema only for schemas on the path; pin it so the allowlist reads the same everywhere.
 set local search_path = public, extensions;
 
@@ -139,6 +139,8 @@ select is(
     'dashboard_value_by_tier(uuid)',
     'dashboard_won_by_month(uuid)',
     'is_member(uuid)',
+    'mark_alert_read(uuid)',
+    'mark_all_alerts_read()',
     'my_permissions(uuid)',
     'my_role(uuid)',
     'national_attendance_by_tier()',
@@ -146,11 +148,19 @@ select is(
     'review_report(uuid,report_status)',
     'role_permissions(workspace_role)',
     'role_rank(workspace_role)',
+    'run_alert_checks()',
     'set_member_role(uuid,uuid,workspace_role)',
     'switch_workspace(uuid)',
+    'unread_alert_count()',
     'workspace_members(uuid)'
   ],
   'authenticated executes exactly the allowlisted functions'
+);
+
+-- pg_cron (plan 07): its schema stays closed to API roles, so nobody can read jobs or schedule.
+select ok(
+  not has_schema_privilege('anon', 'cron', 'USAGE') and not has_schema_privilege('authenticated', 'cron', 'USAGE'),
+  'anon and authenticated have no access to the cron schema'
 );
 
 -- What only the server (service_role) may run: the AI report writes (plan 06).
