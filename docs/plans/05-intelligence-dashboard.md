@@ -98,7 +98,7 @@ Flows:
     - **Smaller fixes:** the seed's backdating is scoped to Northbridge. `dashboard_upcoming` no longer returns columns the page doesn't show. Upcoming links cut their search text to `SEARCH_MAX`. On tablet, the fifth KPI tile spans the row. Charts show a focus ring.
 
 ## Follow-ups
-- **Upcoming links:** they search the opportunities list by title, so a short title can match other deals too. Link to the exact deal once the list takes an id filter, or deals get a detail page.
+- ~~**Upcoming links:** they search the opportunities list by title, so a short title can match other deals too.~~ Fixed in plan 07: they link to `/opportunities?id=…`.
 - **Skip link:** the sidebar comes after the page content in the DOM, so keyboard users reach the navigation last on every page. Add a "Skip to navigation"/"Skip to content" link in the `(app)` layout.
 - **No-access message:** without `opportunities.view`, the pipeline sections render nothing, with no message. No role lacks it today. Add a note if one ever does.
 - **Chart colours:** every chart is one grey series. Tier 2's small value (£35k) is hard to see next to tier 1's £6.4m; the tooltip and the screen-reader table still show it.
