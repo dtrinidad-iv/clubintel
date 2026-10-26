@@ -7,7 +7,7 @@ const features = [
   { icon: Database, title: "National club database", body: "Every club across the leagues, with attendance, capacity and league history." },
   { icon: Target, title: "Commercial pipeline", body: "Track sponsorship, hospitality and media opportunities from lead to signed." },
   { icon: LayoutDashboard, title: "Intelligence dashboards", body: "Pipeline value, win rates and national trends at a glance, on any device." },
-  { icon: BrainCircuit, title: "AI-written reports", body: "Weekly commercial briefings drafted by AI from your own data, approved by your team." },
+  { icon: BrainCircuit, title: "AI-written reports", body: "Commercial briefings Claude drafts from your own pipeline, approved by your team before anyone acts on them." },
   { icon: BellRing, title: "Automated alerts", body: "Stale deals, missed close dates and attendance drops flagged before they cost you." },
   { icon: ShieldCheck, title: "Secure multi-club workspaces", body: "Each organization's data is isolated at the database, with roles for every teammate." },
 ];

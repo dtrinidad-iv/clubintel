@@ -1,8 +1,12 @@
 # ClubIntel
 
-Commercial intelligence and club management for professional sports clubs. It's a multi-tenant SaaS built with **Next.js 16, React 19, TypeScript, Supabase (Postgres + Auth + RLS), Tailwind CSS v4 and shadcn/ui**.
+[![CI](https://github.com/dtrinidad-iv/clubintel/actions/workflows/ci.yml/badge.svg)](https://github.com/dtrinidad-iv/clubintel/actions/workflows/ci.yml)
+
+Commercial intelligence and club management for professional sports clubs. It's a multi-tenant SaaS built with **Next.js 16, React 19, TypeScript, Supabase (Postgres + Auth + RLS + pg_cron), Tailwind CSS v4, shadcn/ui and the Claude API**.
 
 > A demo product. All clubs, people and organizations in the seed data are fictional.
+
+![Dashboard](docs/screenshots/dashboard.png)
 
 ## Features
 
@@ -11,14 +15,57 @@ Commercial intelligence and club management for professional sports clubs. It's 
 - **Auth.** Email + password sign-up, sign-in and password reset through Supabase Auth, with sessions in cookies (`@supabase/ssr`).
 - **Commercial opportunities.** Each workspace tracks its sponsorship, hospitality, media and partnership deals against clubs. You get a table with filters in the URL, and a kanban board where cards move by drag and drop (mouse, touch or keyboard) or from a menu. Pipeline totals sit on top. Analysts and up create and move deals; admins and owners delete them.
 - **Intelligence dashboard.** Headline numbers for the active workspace: open pipeline, won this quarter, win rate, average deal size and stale deals. Charts show the pipeline by stage and by league tier and wins by month, with national attendance against capacity by tier for context. Upcoming close dates are listed with overdue deals first. Every number is aggregated in Postgres under RLS.
-- **AI intelligence reports.** Claude (Opus 5.5 by default) writes a commercial intelligence report from the workspace's own pipeline and the national club data: a summary, highlights, risks, recommended actions and clubs to watch. It streams in section by section and is saved as a draft that an admin approves or discards. Each workspace has a monthly AI budget, capped by the operator, plus hourly, per-user and platform-wide limits, all enforced in Postgres. Every report holds its worst-case cost until its real cost is known, and owners see spend in Settings. The operator's limits are one row in `public.ai_limits`, changed in SQL. Prompts only ever contain the active workspace's data; contact details and owner names are left out.
+- **AI intelligence reports.** Claude (Opus 5.5 by default) writes a commercial intelligence report from the workspace's own pipeline and the national club data: a summary, highlights, risks, recommended actions and clubs to watch. It streams in section by section and is saved as a draft that an admin approves or discards. Each workspace has a monthly AI budget, capped by the operator, plus hourly, per-user and platform-wide limits, all enforced in Postgres. Every report holds its worst-case cost until its real cost is known, and owners see spend in Settings. Prompts only ever contain the active workspace's data; contact details and owner names are left out.
 - **Automated alerts.** Owners and admins set rules once: a deal that goes quiet, a close date that passes, or a watched club whose attendance drops. Postgres checks them every morning (pg_cron) and on demand, and alerts land in an inbox with an unread badge in the sidebar. Read state is per person, and each alert links to the exact deal or club.
 - **Contacts.** The people behind each deal, at the club or on the partner side, can be linked to opportunities. The database guarantees a contact or owner always belongs to the same workspace.
-- **National club database.** A shared, searchable directory of 42 fictional clubs across five leagues and four tiers, with five seasons of attendance, capacity and league position. Filters live in the URL; each club has a profile with attendance and league position charts. It's reference data every workspace reads, so it has no workspace and no write access from the app.
+- **National club database.** A shared, searchable directory of 42 fictional clubs across five leagues and four tiers, with five seasons of attendance, capacity and league position. Each club has a profile with attendance and league position charts. It's reference data every workspace reads, so it has no workspace and no write access from the app.
 - **REST API.** `GET /api/v1/clubs` and `GET /api/v1/clubs/{id}` for external tools (see [API](#api)).
-- **Responsive app shell.** The sidebar collapses on desktop and becomes a sheet on mobile, with a workspace switcher and account menu.
+- **Responsive.** Every page works at 390px; the sidebar becomes a sheet on mobile.
 
-Planned work, one plan file per feature, is in [`docs/plans/`](docs/plans/README.md).
+## Screenshots
+
+| | |
+|---|---|
+| ![Landing page](docs/screenshots/landing.png) Landing | ![Opportunities board](docs/screenshots/opportunities-board.png) Opportunities board |
+| ![AI report](docs/screenshots/ai-report.png) An approved AI report | ![Alerts](docs/screenshots/alerts.png) Alerts inbox |
+| ![Clubs](docs/screenshots/clubs.png) National club database | ![Club profile](docs/screenshots/club-profile.png) Club profile |
+| ![Members](docs/screenshots/settings-members.png) Members and roles | <img src="docs/screenshots/mobile-dashboard.png" alt="Dashboard on a phone" width="240"> Dashboard on a phone |
+
+They're made by a script from the seeded demo: `supabase db reset`, then `npm run screenshots`, which builds and starts its own server.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Browser
+    UI[React pages and forms]
+  end
+  subgraph Next.js["Next.js 16 (Vercel)"]
+    DAL["Data Access Layer<br/>user, workspace, permissions"]
+    SA[Server Actions]
+    RH["Route Handlers<br/>/api/v1, /api/ai/reports"]
+    AI["AI layer<br/>prompts, schema, client"]
+  end
+  subgraph Supabase["Supabase (Postgres 17)"]
+    RLS["Tables with RLS<br/>can(workspace, permission)"]
+    FN["security definer functions<br/>membership, reports, alerts"]
+    CRON[pg_cron: daily alert checks]
+  end
+  Claude[(Claude API)]
+
+  UI --> SA & RH
+  SA & RH --> DAL
+  DAL -->|as the user| RLS
+  RH -->|service role, report writes only| FN
+  RH --> AI --> Claude
+  CRON --> FN
+  FN --> RLS
+```
+
+- **The workspace is the tenant, and Postgres is the boundary.** Every tenant table has RLS policies that call `public.can(workspace_id, '<permission>')`. The app queries as the signed-in user, so a bug in the app can't show another workspace's rows. References between tenant rows are composite foreign keys that include `workspace_id`. Grants are deny-by-default: each migration grants exactly the columns and functions it needs, and a catalog-wide pgTAP test pins them.
+- **The active workspace is server state** (`profiles.current_workspace_id`), changed only through a membership-checked function. Client input is never proof of access.
+- **AI** goes through one client interface, with a fake provider for tests and local work. Prompts contain only the active workspace's data, in a delimited block marked as data. Output is a zod-validated structure, and nothing the model writes is acted on without a person approving it. Report writes and their cost go through functions only the server's service role may run, so users can't forge a report or its cost. Budgets and limits are checked in Postgres before any call.
+- **Scheduled work** runs inside Postgres with pg_cron, so there's no public cron endpoint to protect.
 
 ## Run it locally
 
@@ -27,15 +74,28 @@ Requirements: Node 22 (`.nvmrc`), Docker (or colima), and the [Supabase CLI](htt
 ```bash
 npm install
 npm run db:start                 # local Supabase on ports 55321-55329
-cp .env.example .env.local       # then fill NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY from `supabase status`
+cp .env.example .env.local       # then fill it in from `supabase status` (see below)
 npm run dev                      # http://localhost:3020
 ```
 
-Also copy the *Secret key* from `supabase status` into `SUPABASE_SECRET_KEY` in `.env.local`: the server uses it for the AI report writes, which only the server may make. AI reports use `AI_PROVIDER` in `.env.local`. `fake` (the `.env.example` default) streams a fixed sample report with no network or cost. For real reports, set `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`; `AI_MODEL` overrides the default `claude-opus-5-5`. With no provider and no key, AI is off and the Reports page says so.
+| Variable | Where it comes from |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `supabase status` (API URL); `http://127.0.0.1:55321` locally |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `supabase status` (Publishable key). Safe in the browser: RLS protects the data |
+| `SUPABASE_SECRET_KEY` | `supabase status` (Secret key). Server-only; used just for AI report writes |
+| `SITE_URL` | Public URL for email links and the AI route's origin check. Optional locally |
+| `AI_PROVIDER` | `fake` (a fixed sample, no network or cost) or `anthropic`. Unset: `anthropic` if a key is set, otherwise AI is off |
+| `ANTHROPIC_API_KEY` | Your Claude API key, for `AI_PROVIDER=anthropic`. Server-only |
+| `AI_MODEL` | Optional; defaults to `claude-opus-5-5` |
 
 The database is created from `supabase/migrations/` and filled from `supabase/seed.sql` (accounts and workspaces) and `supabase/seeds/*.sql`. `npm run db:reset` rebuilds the **local** database from scratch.
 
-The club data in `supabase/seeds/clubs.sql` is generated: change `scripts/generate-clubs.mjs` and run `node scripts/generate-clubs.mjs`. The script is deterministic, so the same clubs and ids come out every time. `supabase/seeds/demo-pipeline.sql` adds demo contacts and opportunities to both workspaces, with a year of won and lost deals dated relative to the reset, so the dashboard looks current after each `supabase db reset`. `supabase/seeds/demo-rules.sql` adds three alert rules to Northbridge and runs them once, so the inbox has alerts; it's named to load after the pipeline seed, because seeds load alphabetically. `supabase/seeds/demo-reports.sql` adds two reports to Northbridge (one approved, one draft), written through the same functions as the app. It's hand-written, and it signs in as the demo owners, so its rows go through the same triggers and RLS as the app's.
+- **`clubs.sql`** is generated: change `scripts/generate-clubs.mjs` and run `node scripts/generate-clubs.mjs`. The script is deterministic, so the same clubs and ids come out every time.
+- **`demo-pipeline.sql`** adds demo contacts and opportunities to both workspaces. It includes a year of won and lost deals dated relative to the reset, so the dashboard looks current after each `supabase db reset`.
+- **`demo-reports.sql`** adds two reports to Northbridge, one approved and one draft.
+- **`demo-rules.sql`** adds three alert rules and runs them once. It's named to sort last, because seeds load alphabetically.
+
+The demo seeds are hand-written. They act as the demo users, so their rows go through the same triggers, RLS and functions as the app's.
 
 ### Demo accounts
 
@@ -51,18 +111,24 @@ Every demo account's password is `demo1234`.
 
 Emails sent locally (password reset, confirmation) appear in Mailpit at http://127.0.0.1:55324.
 
-## Checks
+## Checks and CI
 
 | Command | What it runs |
 |---|---|
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript |
-| `npm test` | Vitest unit tests |
-| `npm run test:db` | pgTAP tests in `supabase/tests/`, covering RLS isolation between workspaces and the permission matrix |
+| `npm test` | Vitest unit tests, including the AI route and the Claude client against recorded responses (no network) |
+| `npm run test:db` | pgTAP tests in `supabase/tests/`: RLS isolation between workspaces, the permission matrix, grants, budgets, alerts |
 | `npm run build` | Production build |
-| `npm run test:e2e` | Playwright end-to-end tests (desktop + mobile) against the production build |
+| `npm run test:e2e` | Playwright end-to-end tests (desktop + mobile) against the production build, with the fake AI provider |
 | `npm run test:hooks` | Tests for the Claude Code hooks |
-| `.claude/skills/verify/verify.sh [all]` | All of the above, as CI runs them |
+| `.claude/skills/verify/verify.sh [all]` | All of the above |
+
+[CI](.github/workflows/ci.yml) runs every one of them on each push to `main` and each pull request, against a local Supabase stack in the runner. It needs no repository secrets.
+
+## Deploy
+
+Supabase cloud for the database, Vercel for the app: see [`docs/deploy.md`](docs/deploy.md). It covers the project settings the migrations rely on (Postgres 17, tables not auto-exposed), loading the club data, the environment variables, AI limits and a post-deploy checklist.
 
 ## API
 
@@ -73,33 +139,48 @@ Both endpoints need a signed-in session (the Supabase auth cookie) and answer `4
 | `GET /api/v1/clubs` | `{ data: Club[], meta: { page, pageSize, total, totalPages } }`, 20 clubs a page, ordered by tier and league position |
 | `GET /api/v1/clubs/{id}` | `{ data: Club }` with `league` and every season in `seasons`, or `404` |
 
-Query parameters for the list, all optional: `q` (part of the club name), `league` (a league id such as `league-one`), `region` (`england-north`, `england-midlands`, `england-south`, `scotland`, `wales`, `northern-ireland`, `ireland`), `tier` (1–4) and `page`. Invalid values are ignored rather than rejected. Seasons are numbered by their starting year: `2025` is 2025/26.
+The list's query parameters are all optional:
+- `q`: part of the club name;
+- `league`: a league id such as `league-one`;
+- `region`: `england-north`, `england-midlands`, `england-south`, `scotland`, `wales`, `northern-ireland` or `ireland`;
+- `tier`: 1–4;
+- `page`.
+
+Invalid values are ignored rather than rejected. Seasons are numbered by their starting year: `2025` is 2025/26.
 
 ## Project layout
 
 ```
 src/proxy.ts                 refreshes the session cookie; optimistic redirects only
 src/lib/dal.ts               Data Access Layer: current user, workspace and permissions
-src/lib/supabase/            server and browser clients, generated database types
-src/lib/workspace-actions.ts Server Actions for workspaces and members
-src/lib/clubs.ts             queries for the shared club database
-src/app/api/v1/              REST endpoints
+src/lib/supabase/            user client, service client (AI writes only), generated types
+src/lib/ai/                  AI layer: client, prompts, schema, pricing, report route logic
+src/lib/*-actions.ts         Server Actions, one file per feature
+src/app/api/                 REST endpoints and the AI report stream
 src/app/(auth)/              sign in, sign up, password reset
 src/app/(app)/               the signed-in app (sidebar layout)
-supabase/migrations/         schema, functions and RLS policies
-supabase/seeds/              generated seed data (clubs)
+supabase/migrations/         schema, functions, RLS policies, grants and cron jobs
+supabase/seeds/              generated club data and hand-written demo data
 supabase/tests/database/     pgTAP tests
 scripts/                     data generators
-e2e/                         Playwright tests
+e2e/                         Playwright tests and the screenshot script
 docs/plans/                  one plan file per feature
 ```
 
-## Built with Claude Code
+## How this was built with Claude Code
 
-This repo is developed with [Claude Code](https://claude.com/claude-code), using project rules and tooling that are checked in:
+Every feature was planned, built, reviewed and shipped with [Claude Code](https://claude.com/claude-code), using rules and tooling checked into this repo:
 
-- [`CLAUDE.md`](CLAUDE.md): the tenancy, database, Next.js and workflow rules Claude follows.
-- [`.claude/skills/`](.claude/skills): `/plan-task`, `/verify`, `/ship-plan`, `/new-migration` and `/tenant-feature`.
-- [`.claude/agents/`](.claude/agents): read-only reviewers for code, security, RLS and UI.
-- [`.claude/hooks/`](.claude/hooks): guards that block force-pushes, remote database resets, edits to committed migrations and secrets in code. They're tested in `tests/hooks.test.mjs`.
-- [`docs/plans/`](docs/plans/README.md): one plan per feature, from proposal to the commits that shipped it.
+1. **Plan.** [`/plan-task`](.claude/skills/plan-task) writes `docs/plans/NN-*.md` with the tables, policies, pages and tests, and stops for approval. Real decisions (a dependency, an architecture fork) are asked, not assumed. See [`docs/plans/`](docs/plans/README.md) for every plan, its decisions, review notes and follow-ups.
+2. **Build** to the conventions in [`CLAUDE.md`](CLAUDE.md), with recipes as skills:
+   - [`/new-migration`](.claude/skills/new-migration): migration safety rules;
+   - [`/tenant-feature`](.claude/skills/tenant-feature): the steps for a workspace-owned feature;
+   - the `claude-api` skill for the AI layer.
+3. **Guard.** [Hooks](.claude/hooks) run on Claude's own actions:
+   - **blocked:** force-pushes, remote database resets, edits to committed migrations, secrets written into files, and server secrets in client code;
+   - **asked first:** before any push;
+   - **type-checked:** every TypeScript edit.
+
+   The hooks are tested in `tests/hooks.test.mjs`.
+4. **Review.** Four read-only [subagents](.claude/agents) review every change: `code-reviewer`, `security-auditor`, `rls-reviewer` (with SQL against the local database) and `ui-reviewer` (a real browser at 390, 768 and 1280px). Their findings and fixes are recorded in each plan. Several were real bugs, such as AI usage recorded as $0 and a test that proved nothing.
+5. **Verify and ship.** [`/verify`](.claude/skills/verify) runs every check. [`/ship-plan`](.claude/skills/ship-plan) commits by area (db, web, tests, tooling), marks the plan done with its commit hashes, and pushes. CI runs the same checks on GitHub.
